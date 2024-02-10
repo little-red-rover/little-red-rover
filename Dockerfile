@@ -20,4 +20,3 @@ RUN apt -y install --no-install-recommends python3-pip
 RUN source /opt/ros/$ROS_DISTRO/setup.bash && colcon build
 RUN source install/local_setup.bash
 
-
