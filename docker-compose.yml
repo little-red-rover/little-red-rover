@@ -5,8 +5,6 @@ services:
         image: ros_iron_irwini_dev
         build: .
         container_name: ros_iron_irwini_dev
-        stdin_open: true # docker run -i
-        tty: true # docker run -t
         network_mode: "host" # --net:host
         privileged: true # --privilaged
         volumes:
