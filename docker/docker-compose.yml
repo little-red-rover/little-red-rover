@@ -14,8 +14,11 @@ services:
         build: ./micro_ros_iron_agent
         container_name: micro_ros_iron_flash
         network_mode: "host" # --net:host
+        privileged: true # --privilaged
         depends_on:
           - ros_iron_base
+        volumes:
+            - /dev:/dev
     micro_ros_iron_flash:
         image: micro_ros_iron_flash
         build: ./micro_ros_iron_flash
