@@ -4,4 +4,4 @@ Free as in almost free
 
 and also freedom.
 
-`cd docker && docker compose run --rm --build ros_dev`
+`cd SOFTWARE/docker && docker compose run ros_iron_dev`

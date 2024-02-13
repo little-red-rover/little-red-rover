@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+    ros_iron_dev:
+        image: ros_iron_dev
+        build: ./ros_iron_dev
+        container_name: ros_iron_dev
+        network_mode: host # --net:host
+        ipc: host
+        privileged: true # --privilaged
+        depends_on:
+          - ros_iron_base
+          - micro_ros_iron_agent
+    micro_ros_iron_agent:
+        image: micro_ros_iron_agent
+        build: ./micro_ros_iron_agent
+        container_name: micro_ros_iron_agent
+        network_mode: host # --net:host
+        ipc: host
+        privileged: true # --privilaged
+        depends_on:
+            - ros_iron_base
+        volumes:
+            - /dev:/dev
+    micro_ros_iron_flash:
+        image: micro_ros_iron_flash
+        build: 
+          context: ../
+          dockerfile: ./docker/micro_ros_iron_flash/Dockerfile
+        container_name: micro_ros_iron_flash
+        network_mode: host # --net:host
+        privileged: true # --privilaged
+        depends_on:
+            - ros_iron_base
+        volumes:
+            - /dev:/dev
+            - ../esp32_firmware:/microros_ws/firmware/freertos_apps/apps/esp32_firmware
+    ros_iron_base:
+        image: ros_iron_base
+        build: ./ros_iron_base
+        container_name: ros_iron_base
