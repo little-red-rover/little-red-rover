@@ -3,7 +3,9 @@ version: '3'
 services:
     ros_iron_dev:
         image: ros_iron_dev
-        build: ./ros_iron_dev
+        build: 
+          context: ../
+          dockerfile: ./docker/ros_iron_dev/Dockerfile
         container_name: ros_iron_dev
         network_mode: host # --net:host
         ipc: host
@@ -12,6 +14,8 @@ services:
         depends_on:
           - micro_ros_iron_agent
           - micro_ros_iron_firmware
+        volumes:
+          - ../esp32_firmware:/microros_ws/firmware/freertos_apps/apps/esp32_firmware
     micro_ros_iron_agent:
         image: micro_ros_iron_agent
         build: ./micro_ros_iron_agent
