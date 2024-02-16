@@ -10,7 +10,7 @@ Extensive development tooling, example code / projects, and documentation is pro
 
 Little Red Rover was developed with educational use in mind. Each rover is affordable enought to be funded by a small course fee, and the detailed documentation and tutorials provide a starting point for a full curriculum.
 
-LLR is also perfect for robotics hobbyists interested in elevating their work. Breaking out of tinkery ecosystems like Arduino can be difficult, and LLR is a affordable starting point.
+LLR is also perfect for robotics hobbyists interested in elevating their work. Breaking out of tinkery ecosystems like Arduino can be difficult, and LLR is an affordable starting point.
 
 ## Stackup
 
@@ -38,7 +38,7 @@ Little Red Rover is currently in developement, and the specs below may or may no
 ## Repo Structure
 
 * `/SOFTWARE`: ROS and micro-ROS code, along with the Docker developement infrastructure. See `/SOFTWARE/README.md` for more details
-* `/HARDWARE`: KiCad PCB design files, and [SKiDL}(https://github.com/devbisme/skidl) circuit description. See `/HARDWARE/README.md` for more details
+* `/HARDWARE`: KiCad PCB design files, and [SKiDL](https://github.com/devbisme/skidl) circuit description. See `/HARDWARE/README.md` for more details
 
 ## Thanks
 
