@@ -43,6 +43,7 @@ RUN source /ros2_setup.bash && \
 	bear -- ros2 run micro_ros_setup build_firmware.sh && \
 	mv compile_commands.json /compile_commands.json
 
+
 #####
 # Build ESP32 firmware
 #####
@@ -53,6 +54,8 @@ COPY /esp32_firmware /microros_ws/firmware/freertos_apps/apps/esp32_firmware
 
 RUN source /ros2_setup.bash && \
 	ros2 run micro_ros_setup build_firmware.sh
+
+RUN rm -rf /little_red_rover_ws/firmware/toolchain/esp-idf/.git
 
 #####
 # Build ROS2 code
@@ -73,39 +76,40 @@ RUN apt-get update && \
 # Setup local dev environment (Optional, just my personal dev env)
 #####
 
-FROM ros:iron as dev_env_setup
+FROM base as dev_env_setup
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl tmux openssh-client unzip npm
 
 RUN curl -OL https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz && \
 	tar -C /usr/local --strip-components 1 -xf nvim-linux64.tar.gz && \
-	rm nvim-linux64.tar.gz
+	rm nvim-linux64.tar.gz && \
+	nvim --headless "+Lazy! sync" +qa
 
 ENV TMUX_PLUGIN_MANAGER_PATH="~/.tmux/plugins/"
 
 RUN cd $HOME && \
 	echo ".cfg" >> .gitignore && \
-	git clone --bare https://github.com/usedhondacivic/.dotfiles.git $HOME/.cfg && \
+	git clone --depth=1 --bare https://github.com/usedhondacivic/.dotfiles.git $HOME/.cfg && \
 	/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout && \
 	/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
 	
-RUN git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && \
+RUN git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && \
 	~/.tmux/plugins/tpm/bin/install_plugins
 
 #####
 # Final image
 #####
 
-FROM base 
+FROM dev_env_setup
 
 WORKDIR "/little_red_rover_ws"
 
-COPY --from=dev_env_setup /root /root
 COPY --from=build_user_firmware /little_red_rover_ws /little_red_rover_ws
 
 RUN apt-get update && \
 	rosdep update && \ 
-	rosdep install --from-paths src --ignore-src -y
+	rosdep install --from-paths src --ignore-src -y && \
+	apt-get install -y --no-install-recommends tmux
 
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash && source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
