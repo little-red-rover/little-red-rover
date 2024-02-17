@@ -21,4 +21,15 @@ RUN cd $HOME && \
 RUN git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && \
 	~/.tmux/plugins/tpm/bin/install_plugins
 
-CMD bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && source install/local_setup.bash && bash"
+RUN mkdir -p /little_red_rover_ws/src
+WORKDIR /little_red_rover_ws
+
+COPY ../little_red_rover_ws/src /little_red_rover_ws/src
+RUN rosdep install -i --from-path src --rosdistro iron -y
+RUN colcon build
+
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash && source /microros_ws/install/local_setup.bash && source /little_red_rover_ws/install/local_setup.bash" >> /root/.bashrc
+
+WORKDIR /little_red_rover_ws/src
+
+CMD bash -c "bash"

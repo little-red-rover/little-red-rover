@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+    ros_iron_dev:
+        image: ros_iron_dev
+        build: .
+        container_name: ros_iron_dev
+        network_mode: host # --net:host
+        ipc: host
+        privileged: true # --privilaged
+        tty: true
+        volumes:
+          - /dev:/dev
+          - ../little_red_rover_ws/src:/little_red_rover_ws/src
+          - ../esp32_firmware:/microros_ws/firmware/freertos_apps/apps/esp32_firmware

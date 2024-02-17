@@ -2,7 +2,7 @@
 
 FROM ros_iron_base
 
-RUN apt-get -y install build-essential nghttp2 libnghttp2-dev libssl-dev bear
+RUN apt-get -y install libssl-dev bear
 
 RUN source /opt/ros/$ROS_DISTRO/setup.bash && \
 	source install/local_setup.bash && \

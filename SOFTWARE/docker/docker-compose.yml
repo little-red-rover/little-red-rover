@@ -13,9 +13,10 @@ services:
         tty: true
         depends_on:
           - micro_ros_iron_agent
-          - micro_ros_iron_firmware
         volumes:
+          - ../little_red_rover_ws/src:/little_red_rover_ws/src
           - ../esp32_firmware:/microros_ws/firmware/freertos_apps/apps/esp32_firmware
+
     micro_ros_iron_agent:
         image: micro_ros_iron_agent
         build: ./micro_ros_iron_agent
@@ -23,10 +24,9 @@ services:
         network_mode: host # --net:host
         ipc: host
         privileged: true # --privilaged
-        depends_on:
-            - micro_ros_iron_firmware
         volumes:
             - /dev:/dev
+              
     micro_ros_iron_flash:
         image: micro_ros_iron_flash
         build: 
@@ -34,18 +34,17 @@ services:
           dockerfile: ./docker/micro_ros_iron_flash/Dockerfile
         container_name: micro_ros_iron_flash
         privileged: true # --privilaged
-        depends_on:
-            - micro_ros_iron_firmware
         volumes:
             - /dev:/dev
             - ../esp32_firmware:/microros_ws/firmware/freertos_apps/apps/esp32_firmware
+
     micro_ros_iron_firmware:
         image: micro_ros_iron_firmware
         build: ./micro_ros_iron_firmware
         container_name: micro_ros_iron_firmware
-        depends_on:
-            - ros_iron_base
+
     ros_iron_base:
         image: ros_iron_base
         build: ./ros_iron_base
         container_name: ros_iron_base
+
