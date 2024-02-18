@@ -2,5 +2,5 @@
     "name": "ros_iron_dev",
     "service": "ros_iron_dev",
     "dockerComposeFile": "../docker/docker-compose.yml",
-    "workspaceFolder": "/microros_ws/"
+    "workspaceFolder": "/little_red_rover_ws/"
 }
