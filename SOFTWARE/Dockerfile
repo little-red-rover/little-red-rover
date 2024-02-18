@@ -9,6 +9,26 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /ros2_setup.bash
 RUN mkdir -p /little_red_rover_ws/src
 
 #####
+# Setup esp-idf and the micro-ros component
+#####
+
+FROM base as esp_setup
+
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+RUN mkdir -p ~/esp && \
+	cd ~/esp && \
+	git clone --depth=1 -b v5.2 --recursive --shallow-submodules https://github.com/espressif/esp-idf.git
+
+RUN cd ~/esp/esp-idf && \
+	./install.sh esp32,esp32c3
+
+RUN . $HOME/esp/esp-idf/export.sh && \
+	pip3 install catkin_pkg lark-parser colcon-common-extensions
+
+
+#####
 # Setup microROS tools in the workspace
 #####
 
@@ -25,52 +45,21 @@ RUN apt update && \
 RUN source /ros2_setup.bash &&  colcon build
 RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
-RUN apt-get install -y --no-install-recommends libssl-dev bear
-
-RUN source /ros2_setup.bash && \
-	ros2 run micro_ros_setup create_agent_ws.sh && \
-	ros2 run micro_ros_setup build_agent.sh && \
-	ros2 run micro_ros_setup create_firmware_ws.sh freertos esp32
-
-# Create a "fake" app to make microROS generate build files on layers previous to copying in the actual app
-RUN mkdir /little_red_rover_ws/firmware/freertos_apps/apps/esp32_firmware && \
-	touch /little_red_rover_ws/firmware/freertos_apps/apps/esp32_firmware/app.c && \
-	touch /little_red_rover_ws/firmware/freertos_apps/apps/esp32_firmware/app-colcon.meta && \
-	echo "void appMain(void *arg){}" > /little_red_rover_ws/firmware/freertos_apps/apps/esp32_firmware/app.c
-
-RUN source /ros2_setup.bash && \
-	ros2 run micro_ros_setup configure_firmware.sh esp32_firmware --transport serial && \
-	bear -- ros2 run micro_ros_setup build_firmware.sh && \
-	mv compile_commands.json /compile_commands.json
-
-
-#####
-# Build ESP32 firmware
-#####
-
-FROM microros_setup as build_user_firmware
-
-COPY /esp32_firmware /microros_ws/firmware/freertos_apps/apps/esp32_firmware
-
-RUN source /ros2_setup.bash && \
-	ros2 run micro_ros_setup build_firmware.sh
-
-RUN rm -rf /little_red_rover_ws/firmware/toolchain/esp-idf/.git
-
 #####
 # Build ROS2 code
 #####
 
-FROM build_user_firmware as build_user_code
+FROM base as build_user_code
 
-RUN mkdir -p /little_red_rover_ws/src
 WORKDIR /little_red_rover_ws
 
-COPY ../little_red_rover_ws/src/* /little_red_rover_ws/src/
+COPY /little_red_rover_ws/src /little_red_rover_ws/src
 
 RUN apt-get update && \
 	rosdep update && \ 
-	rosdep install -i --from-path src --rosdistro iron -y && colcon build
+	rosdep install -i --from-path src --rosdistro iron -y && \
+	source /ros2_setup.bash && \
+	colcon build
 
 #####
 # Setup local dev environment (Optional, just my personal dev env)
@@ -104,20 +93,21 @@ FROM dev_env_setup
 
 WORKDIR "/little_red_rover_ws"
 
-COPY --from=build_user_firmware /little_red_rover_ws /little_red_rover_ws
+COPY --from=build_user_code /little_red_rover_ws /little_red_rover_ws
+COPY --from=esp_setup /root/esp /root/esp
+COPY --from=esp_setup /root/.espressif /root/.espressif
 
 RUN apt-get update && \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y && \
-	apt-get install -y --no-install-recommends tmux
+	apt-get install -y --no-install-recommends tmux git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-buildccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash && source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
-RUN echo "alias micro_ros_flash='ros2 run micro_ros_setup build_firmware.sh && ros2 run micro_ros_setup flash_firmware.sh'" >> /ros2_setup.bash
-
 RUN echo "alias micro_ros_agent='ros2 run micro_ros_agent micro_ros_agent serial --dev \$(ls /dev/serial/by-id/*)'" >> /ros2_setup.bash
+
+RUN echo "alias micro_ros_flash='(. $HOME/esp/esp-idf/export.sh && cd /esp32_firmware && idf.py build flash monitor)'" >> /root/.bashrc
 
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
 
 CMD bash -c "source /ros2_setup.bash && bash"
-
