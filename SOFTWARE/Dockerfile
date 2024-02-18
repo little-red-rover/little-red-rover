@@ -100,7 +100,7 @@ COPY --from=esp_setup /root/.espressif /root/.espressif
 RUN apt-get update && \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y && \
-	apt-get install -y --no-install-recommends tmux git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-buildccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+	apt-get install -y --no-install-recommends tmux git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash && source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
