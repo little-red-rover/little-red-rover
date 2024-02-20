@@ -14,6 +14,8 @@
 #include <std_msgs/msg/int32.h>
 #include <uros_network_interfaces.h>
 
+#include "wifi_config.h"
+
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
 #endif
@@ -112,10 +114,7 @@ void micro_ros_task(void *arg)
 
 void app_main(void)
 {
-#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) ||                                \
-  defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
-	ESP_ERROR_CHECK(uros_network_interface_initialize());
-#endif
+	init_wifi();
 
 	// pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
 	xTaskCreate(micro_ros_task,
