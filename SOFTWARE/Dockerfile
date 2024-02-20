@@ -27,24 +27,6 @@ RUN cd ~/esp/esp-idf && \
 RUN . $HOME/esp/esp-idf/export.sh && \
 	pip3 install catkin_pkg lark-parser colcon-common-extensions
 
-
-#####
-# Setup microROS tools in the workspace
-#####
-
-FROM base as microros_setup
-
-WORKDIR "/little_red_rover_ws"
-RUN git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
-
-RUN apt update && \
-	rosdep update && \ 
-	rosdep install --from-paths src --ignore-src -y && \
-	apt-get install -y --no-install-recommends python3-pip
-
-RUN source /ros2_setup.bash &&  colcon build
-RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
-
 #####
 # Build ROS2 code
 #####
@@ -55,11 +37,26 @@ WORKDIR /little_red_rover_ws
 
 COPY /little_red_rover_ws/src /little_red_rover_ws/src
 
-RUN apt-get update && \
+#####
+# Setup microROS tools in the workspace
+#####
+
+FROM build_user_code as microros_setup
+
+WORKDIR "/little_red_rover_ws"
+RUN git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
+
+RUN apt update && \
 	rosdep update && \ 
-	rosdep install -i --from-path src --rosdistro iron -y && \
-	source /ros2_setup.bash && \
-	colcon build
+	rosdep install --from-paths src --ignore-src -y && \
+	apt-get install -y --no-install-recommends python3-pip
+
+RUN source /ros2_setup.bash && colcon build
+RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
+
+RUN source /ros2_setup.bash && \ 
+	ros2 run micro_ros_setup create_agent_ws.sh && \
+	ros2 run micro_ros_setup build_agent.sh
 
 #####
 # Setup local dev environment (Optional, just my personal dev env)
@@ -93,7 +90,7 @@ FROM dev_env_setup
 
 WORKDIR "/little_red_rover_ws"
 
-COPY --from=build_user_code /little_red_rover_ws /little_red_rover_ws
+COPY --from=microros_setup /little_red_rover_ws /little_red_rover_ws
 COPY --from=esp_setup /root/esp /root/esp
 COPY --from=esp_setup /root/.espressif /root/.espressif
 
@@ -107,6 +104,8 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash && source /little_red_rover_w
 RUN echo "alias micro_ros_agent='ros2 run micro_ros_agent micro_ros_agent serial --dev \$(ls /dev/serial/by-id/*)'" >> /ros2_setup.bash
 
 RUN echo "alias micro_ros_flash='(. $HOME/esp/esp-idf/export.sh && cd /esp32_firmware && idf.py build flash monitor)'" >> /root/.bashrc
+
+RUN echo "alias get_idf='. $HOME/esp/esp-idf/export.sh'" >> /root/.bashrc
 
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
 
