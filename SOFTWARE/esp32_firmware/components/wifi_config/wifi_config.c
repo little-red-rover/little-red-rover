@@ -14,6 +14,7 @@
 #include <wifi_provisioning/scheme_softap.h>
 #include <wifi_provisioning/wifi_config.h>
 
+#include "esp_err.h"
 #include "wifi_config.h"
 
 static const char *TAG = "wifi_config";
@@ -22,12 +23,54 @@ static const char *TAG = "wifi_config";
 const int WIFI_CONNECTED_EVENT = BIT0;
 static EventGroupHandle_t wifi_event_group;
 
-#define PROV_QR_VERSION "v1"
-#define PROV_TRANSPORT_SOFTAP "softap"
-#define PROV_TRANSPORT_BLE "ble"
-#define QRCODE_BASE_URL "https://espressif.github.io/esp-jumpstart/qrcode.html"
+static void get_device_service_name(char *service_name, size_t max)
+{
+	uint8_t eth_mac[6];
+	const char *ssid_prefix = "PROV_";
+	esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
+	snprintf(service_name,
+			 max,
+			 "%s%02X%02X%02X",
+			 ssid_prefix,
+			 eth_mac[3],
+			 eth_mac[4],
+			 eth_mac[5]);
+}
 
-#define CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT 5
+void provision()
+{
+	ESP_LOGI(TAG, "Starting provisioning");
+
+	/* What is the Device Service Name that we want
+	 * This translates to :
+	 *     - Wi-Fi SSID when scheme is wifi_prov_scheme_softap
+	 *     - device name when scheme is wifi_prov_scheme_ble
+	 */
+	char service_name[12];
+	get_device_service_name(service_name, sizeof(service_name));
+
+	wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
+
+	/* Do not use proof-of-possession */
+	const char *pop = NULL;
+
+	/* This is the structure for passing security parameters
+	 * for the protocomm security 1.
+	 */
+	wifi_prov_security1_params_t *sec_params = pop;
+
+	/* What is the service key (could be NULL)
+	 * This translates to :
+	 *     - Wi-Fi password when scheme is wifi_prov_scheme_softap
+	 *          (Minimum expected length: 8, maximum 64 for WPA2-PSK)
+	 *     - simply ignored when scheme is wifi_prov_scheme_ble
+	 */
+	const char *service_key = NULL;
+
+	/* Start provisioning service */
+	ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(
+	  security, (const void *)sec_params, service_name, service_key));
+}
 
 /* Event handler for catching system events */
 static void event_handler(void *arg,
@@ -62,11 +105,11 @@ static void event_handler(void *arg,
 						   ? "Wi-Fi station authentication failed"
 						   : "Wi-Fi access-point not found");
 				retries++;
-				if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
+				if (retries >= 5) {
 					ESP_LOGI(TAG,
 							 "Failed to connect with provisioned AP, reseting "
 							 "provisioned credentials");
-					wifi_prov_mgr_reset_sm_state_on_failure();
+					provision();
 					retries = 0;
 				}
 				break;
@@ -91,14 +134,11 @@ static void event_handler(void *arg,
 				ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...:");
 				esp_wifi_connect();
 				retries++;
-				if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
+				if (retries >= 5) {
 					ESP_LOGI(TAG,
 							 "Failed to connect with provisioned AP, reseting "
 							 "provisioned credentials");
-					esp_wifi_stop();
-					esp_event_loop_delete_default();
-					wifi_prov_mgr_reset_provisioning();
-					init_wifi();
+					provision();
 					retries = 0;
 				}
 				break;
@@ -146,20 +186,6 @@ static void wifi_init_sta(void)
 	ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-static void get_device_service_name(char *service_name, size_t max)
-{
-	uint8_t eth_mac[6];
-	const char *ssid_prefix = "PROV_";
-	esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
-	snprintf(service_name,
-			 max,
-			 "%s%02X%02X%02X",
-			 ssid_prefix,
-			 eth_mac[3],
-			 eth_mac[4],
-			 eth_mac[5]);
-}
-
 void init_wifi()
 {
 	/* Initialize NVS partition */
@@ -179,6 +205,7 @@ void init_wifi()
 
 	/* Initialize the event loop */
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
+
 	wifi_event_group = xEventGroupCreate();
 
 	/* Register our event handler for Wi-Fi, IP and Provisioning related events
@@ -227,43 +254,9 @@ void init_wifi()
 
 	/* If device is not yet provisioned start provisioning service */
 	if (!provisioned) {
-		ESP_LOGI(TAG, "Starting provisioning");
-
-		/* What is the Device Service Name that we want
-		 * This translates to :
-		 *     - Wi-Fi SSID when scheme is wifi_prov_scheme_softap
-		 *     - device name when scheme is wifi_prov_scheme_ble
-		 */
-		char service_name[12];
-		get_device_service_name(service_name, sizeof(service_name));
-
-		wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
-
-		/* Do not use proof-of-possession */
-		const char *pop = NULL;
-
-		/* This is the structure for passing security parameters
-		 * for the protocomm security 1.
-		 */
-		wifi_prov_security1_params_t *sec_params = pop;
-
-		/* What is the service key (could be NULL)
-		 * This translates to :
-		 *     - Wi-Fi password when scheme is wifi_prov_scheme_softap
-		 *          (Minimum expected length: 8, maximum 64 for WPA2-PSK)
-		 *     - simply ignored when scheme is wifi_prov_scheme_ble
-		 */
-		const char *service_key = NULL;
-
-		/* Start provisioning service */
-		ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(
-		  security, (const void *)sec_params, service_name, service_key));
+		provision();
 	} else {
 		ESP_LOGI(TAG, "Already provisioned, starting Wi-Fi STA");
-
-		/* We don't need the manager as device is already provisioned,
-		 * so let's release it's resources */
-		wifi_prov_mgr_deinit();
 
 		/* Start Wi-Fi station */
 		wifi_init_sta();
@@ -272,4 +265,6 @@ void init_wifi()
 	/* Wait for Wi-Fi connection */
 	xEventGroupWaitBits(
 	  wifi_event_group, WIFI_CONNECTED_EVENT, true, true, portMAX_DELAY);
+
+	wifi_prov_mgr_deinit();
 }

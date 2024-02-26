@@ -8,14 +8,21 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /ros2_setup.bash
 
 RUN mkdir -p /little_red_rover_ws/src
 
+# esp_setup
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends curl git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+# gazebo setup
+RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null && \
+apt-get update && \
+apt-get install -y --no-install-recommends gz-harmonic ros-$ROS_DISTRO-ros-gzharmonic
+
 #####
 # Setup esp-idf and the micro-ros component
 #####
 
 FROM base as esp_setup
-
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 RUN mkdir -p ~/esp && \
 	cd ~/esp && \
@@ -28,7 +35,7 @@ RUN . $HOME/esp/esp-idf/export.sh && \
 	pip3 install catkin_pkg lark-parser colcon-common-extensions
 
 #####
-# Build ROS2 code
+# Setup user code
 #####
 
 FROM base as build_user_code
@@ -94,14 +101,9 @@ COPY --from=microros_setup /little_red_rover_ws /little_red_rover_ws
 COPY --from=esp_setup /root/esp /root/esp
 COPY --from=esp_setup /root/.espressif /root/.espressif
 
-RUN apt-get update && \
-	rosdep update && \ 
-	rosdep install --from-paths src --ignore-src -y && \
-	apt-get install -y --no-install-recommends tmux git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash && source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
-RUN echo "alias micro_ros_agent='ros2 run micro_ros_agent micro_ros_agent serial --dev \$(ls /dev/serial/by-id/*)'" >> /ros2_setup.bash
+RUN echo "alias micro_ros_agent='ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -d'" >> /ros2_setup.bash
 
 RUN echo "alias micro_ros_flash='(. $HOME/esp/esp-idf/export.sh && cd /esp32_firmware && idf.py build flash monitor)'" >> /root/.bashrc
 
@@ -109,4 +111,4 @@ RUN echo "alias get_idf='. $HOME/esp/esp-idf/export.sh'" >> /root/.bashrc
 
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
 
-CMD bash -c "source /ros2_setup.bash && bash"
+CMD bash -c "bash"

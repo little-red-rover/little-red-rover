@@ -4,12 +4,27 @@ services:
     ros_iron_dev:
         image: ros_iron_dev
         build: .
-        container_name: ros_iron_dev
-        network_mode: host # --net:host
-        ipc: host
-        privileged: true # --privilaged
+        network_mode: host # :( -> https://github.com/moby/libnetwork/issues/2397
+        privileged: true # Required to flash esp
+        ipc: host # https://github.com/eProsima/Fast-DDS/issues/1698
         tty: true
         volumes:
-          - /dev:/dev
-          - ./little_red_rover_ws/src/llr_base:/little_red_rover_ws/src/llr_base
-          - ./esp32_firmware:/esp32_firmware
+            - /dev:/dev
+            - ./little_red_rover_ws/src/llr_base:/little_red_rover_ws/src/llr_base
+            - ./esp32_firmware:/esp32_firmware
+        depends_on:
+            - vis_sim
+            - foxglove_studio
+    vis_sim:
+        image: vis_sim
+        container_name: vis_sim
+        network_mode: host # Must be on host so browser can access websocket (without a tedious container IP lookup)
+        ipc: host # Foxglove bridge needs to communicate with ros_iron_dev
+        build:
+            context: .
+            dockerfile: vis_sim.Dockerfile
+    foxglove_studio:
+        image: ghcr.io/foxglove/studio:latest
+        container_name: foxglove
+        ports:
+            - "8080:8080"

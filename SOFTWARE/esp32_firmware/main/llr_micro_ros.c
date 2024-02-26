@@ -1,3 +1,4 @@
+#include <rcl/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -16,9 +17,7 @@
 
 #include "wifi_config.h"
 
-#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
-#endif
 
 #define RCCHECK(fn)                                                            \
 	{                                                                          \
@@ -61,15 +60,11 @@ void micro_ros_task(void *arg)
 	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
 	RCCHECK(rcl_init_options_init(&init_options, allocator));
 
-#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 	rmw_init_options_t *rmw_options =
 	  rcl_init_options_get_rmw_init_options(&init_options);
-
-	// Static Agent IP and port can be used instead of autodisvery.
-	RCCHECK(rmw_uros_options_set_udp_address(
-	  CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
-	// RCCHECK(rmw_uros_discover_agent(rmw_options));
-#endif
+	while (rmw_uros_discover_agent(rmw_options) == RCL_RET_TIMEOUT) {
+		printf("micro-ROS agent not found... Trying again.\n");
+	}
 
 	// create init_options
 	RCCHECK(rclc_support_init_with_options(
