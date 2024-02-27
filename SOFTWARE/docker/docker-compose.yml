@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+    workspace:
+        image: ros2_workspace
+        build:
+            context: ..
+            dockerfile: docker/ros2_workspace.Dockerfile
+        tty: true
+        volumes:
+            - ../little_red_rover_ws/src/llr_base:/little_red_rover_ws/src/llr_base
+        ports:
+            - "9002:9002" # gzweb
+        depends_on:
+            - micro_ros_agent
+            - foxglove_bridge
+            - foxglove_studio
+    micro_ros_agent:
+        image: micro_ros_agent
+        build:
+            context: ..
+            dockerfile: docker/micro_ros_agent.Dockerfile
+        volumes:
+            - /dev:/dev
+        depends_on:
+            - foxglove_bridge
+            - foxglove_studio
+    micro_ros_esp_idf:
+        image: micro_ros_esp_idf
+        build:
+            context: ..
+            dockerfile: docker/micro_ros_esp_idf.Dockerfile
+        privileged: true # Required to flash esp
+        volumes:
+            - ../esp32_firmware:/esp32_firmware
+            - /dev:/dev
+    foxglove_bridge:
+        image: foxglove_bridge
+        build:
+            context: ..
+            dockerfile: docker/foxglove_bridge.Dockerfile
+        ports:
+            - "8765:8765"
+    foxglove_studio:
+        image: ghcr.io/foxglove/studio:latest
+        container_name: foxglove
+        ports:
+            - "8080:8080"
