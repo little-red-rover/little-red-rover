@@ -39,6 +39,9 @@
 		}                                                                      \
 	}
 
+#define CONFIG_MICRO_ROS_AGENT_IP = 
+#define CONFIG_MICRO_ROS_AGENT_PORT = 8888
+
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 
@@ -62,10 +65,13 @@ void micro_ros_task(void *arg)
 
 	rmw_init_options_t *rmw_options =
 	  rcl_init_options_get_rmw_init_options(&init_options);
-	while (rmw_uros_discover_agent(rmw_options) == RCL_RET_TIMEOUT) {
-		printf("micro-ROS agent not found... Trying again.\n");
-	}
 
+	// while (rmw_uros_discover_agent(rmw_options) == RCL_RET_TIMEOUT) {
+	// 	printf("micro-ROS agent not found... Trying again.\n");
+	// }
+	// Need some way to get these onto the device
+	RCCHECK(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
+	
 	// create init_options
 	RCCHECK(rclc_support_init_with_options(
 	  &support, 0, NULL, &init_options, &allocator));

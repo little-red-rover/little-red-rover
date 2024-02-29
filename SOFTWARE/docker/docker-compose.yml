@@ -6,9 +6,9 @@ services:
         build:
             context: ..
             dockerfile: docker/ros2_workspace.Dockerfile
-        tty: true
+        tty: true # Prevent immediate exit when running with dev containers
         volumes:
-            - ../little_red_rover_ws/src/llr_base:/little_red_rover_ws/src/llr_base
+            - ../little_red_rover_ws/src:/little_red_rover_ws/src
         ports:
             - "9002:9002" # gzweb
         depends_on:
@@ -27,6 +27,7 @@ services:
             - foxglove_studio
     micro_ros_esp_idf:
         image: micro_ros_esp_idf
+        tty: true # Prevent immediate exit when running with dev containers
         build:
             context: ..
             dockerfile: docker/micro_ros_esp_idf.Dockerfile

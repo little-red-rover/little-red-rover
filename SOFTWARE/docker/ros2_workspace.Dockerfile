@@ -27,6 +27,14 @@ RUN apt update && \
 RUN source /ros2_setup.bash && colcon build
 RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
+# By default gazebo calculates Lidar data using the GPU.
+# Setting this ENV variable causes it to be calculated on the CPU, but much slower.
+# Can be solved per computer by linking the GPU through docker-compose.yml
+# https://github.com/gazebosim/gz-sensors/issues/26
+RUN echo "export LIBGL_ALWAYS_SOFTWARE=true" >> /ros2_setup.bash
+
+RUN echo "alias start_sim_vis='colcon build && ros2 launch llr_base llr_vis_sim.launch.py'" >> /root/.bashrc
+
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
 
 CMD bash -c "bash"

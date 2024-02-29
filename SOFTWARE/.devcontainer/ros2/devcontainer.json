@@ -1,0 +1,6 @@
+{
+    "name": "ros2_workspace",
+    "service": "workspace",
+    "dockerComposeFile": "../../docker/docker-compose.yml",
+    "workspaceFolder": "/little_red_rover_ws/src"
+}
