@@ -20,6 +20,8 @@
 #include <wifi_provisioning/manager.h>
 #include <wifi_provisioning/scheme_softap.h>
 
+#include "esp_mac.h"
+
 static void wifi_prov_event_handler(void* arg, esp_event_base_t event_base,
                           int event_id, void* event_data)
 {
@@ -87,6 +89,41 @@ esp_err_t init_fs(void)
     }
     return ESP_OK;
 }
+/* The event group allows multiple bits for each event, but we only care about two events:
+ * - we are connected to the AP with an IP
+ * - we failed to connect after the maximum amount of retries */
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT      BIT1
+
+static const char *TAG_AP = "WiFi SoftAP";
+static const char *TAG_STA = "WiFi Sta";
+
+static int s_retry_num = 0;
+
+/* FreeRTOS event group to signal when we are connected/disconnected */
+static EventGroupHandle_t s_wifi_event_group;
+
+static void wifi_event_handler(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+        ESP_LOGI(TAG_AP, "Station "MACSTR" joined, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+        ESP_LOGI(TAG_AP, "Station "MACSTR" left, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+        ESP_LOGI(TAG_STA, "Station started");
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
+        ESP_LOGI(TAG_STA, "Got IP:" IPSTR, IP2STR(&event->ip_info.ip));
+        s_retry_num = 0;
+        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    }
+}
 
 void app_main(void)
 {
@@ -106,12 +143,22 @@ void app_main(void)
 	/* WEBSERVER INIT */
     ESP_ERROR_CHECK(esp_netif_init());
 
-	esp_netif_create_default_wifi_ap();
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+
+
+    ESP_LOGI("AP", "ESP_WIFI_MODE_AP");
+    esp_netif_t *esp_netif_ap = esp_netif_create_default_wifi_ap();
+
+    ESP_LOGI("STA", "ESP_WIFI_MODE_STA");
+    esp_netif_t *esp_netif_sta = esp_netif_create_default_wifi_sta();
+
 	ESP_ERROR_CHECK(rest_server_start("/www"));
 
 	/* PROVISIONING INIT */
+    s_wifi_event_group = xEventGroupCreate();
+
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID,
                                              &wifi_prov_event_handler, NULL));
 
@@ -123,5 +170,28 @@ void app_main(void)
 
 	wifi_prov_scheme_softap_set_httpd_handle((void*)rest_server_get_httpd_handle());
 
-	ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL, "hello_world", "hello_world") );
+    bool provisioned = false;
+    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+
+    if (!provisioned) {
+        ESP_ERROR_CHECK(
+            esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+
+	    ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL, "hello_world", "hello_world") );
+    } else {
+        ESP_LOGI("ugh", "Already provisioned, starting Wi-Fi STA");
+
+        ESP_ERROR_CHECK(
+            esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+        ESP_ERROR_CHECK(
+            esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+
+        ESP_ERROR_CHECK(esp_wifi_start() );
+    }
+
+    /* Wait for Wi-Fi connection */
+    xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
+    ESP_LOGI("ugh", "Device is provisioned and connected.");
+
+    /* INITIALIZATION COMPLETE*/
 }
