@@ -9,12 +9,12 @@ services:
         tty: true # Prevent immediate exit when running with dev containers
         volumes:
             - ../little_red_rover_ws/src:/little_red_rover_ws/src
+            - ../assets:/assets
         ports:
             - "9002:9002" # gzweb
+            - "9090:9090" # rosbridge
         depends_on:
             - micro_ros_agent
-            - foxglove_bridge
-            - foxglove_studio
     micro_ros_agent:
         image: micro_ros_agent
         build:

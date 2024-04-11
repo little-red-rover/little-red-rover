@@ -1,127 +1,127 @@
-#include <rcl/types.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
+#include <freertos/task.h>
+
+#include "esp_event.h"
+#include "esp_http_server.h"
 #include "esp_log.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include "esp_netif.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
+#include "nvs_flash.h"
+#include "sdkconfig.h"
+#include "esp_wifi_default.h"
 
-#include <rcl/error_handling.h>
-#include <rcl/rcl.h>
-#include <rclc/executor.h>
-#include <rclc/rclc.h>
-#include <std_msgs/msg/int32.h>
-#include <uros_network_interfaces.h>
+#include "rest_server.h"
+#include <esp_wifi.h>
+#include <wifi_provisioning/manager.h>
+#include <wifi_provisioning/scheme_softap.h>
 
-#include "wifi_config.h"
-
-#include <rmw_microros/rmw_microros.h>
-
-#define RCCHECK(fn)                                                            \
-	{                                                                          \
-		rcl_ret_t temp_rc = fn;                                                \
-		if ((temp_rc != RCL_RET_OK)) {                                         \
-			printf("Failed status on line %d: %d. Aborting.\n",                \
-				   __LINE__,                                                   \
-				   (int)temp_rc);                                              \
-			vTaskDelete(NULL);                                                 \
-		}                                                                      \
-	}
-#define RCSOFTCHECK(fn)                                                        \
-	{                                                                          \
-		rcl_ret_t temp_rc = fn;                                                \
-		if ((temp_rc != RCL_RET_OK)) {                                         \
-			printf("Failed status on line %d: %d. Continuing.\n",              \
-				   __LINE__,                                                   \
-				   (int)temp_rc);                                              \
-		}                                                                      \
-	}
-
-#define CONFIG_MICRO_ROS_AGENT_IP = 
-#define CONFIG_MICRO_ROS_AGENT_PORT = 8888
-
-rcl_publisher_t publisher;
-std_msgs__msg__Int32 msg;
-
-void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
+static void wifi_prov_event_handler(void* arg, esp_event_base_t event_base,
+                          int event_id, void* event_data)
 {
-	RCLC_UNUSED(last_call_time);
-	if (timer != NULL) {
-		printf("Publishing: %d\n", (int)msg.data);
-		RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-		msg.data++;
-	}
+	static const char *TAG = "wifi_prov_event";
+    if (event_base == WIFI_PROV_EVENT) {
+        switch (event_id) {
+            case WIFI_PROV_START:
+                ESP_LOGI(TAG, "Provisioning started");
+                break;
+            case WIFI_PROV_CRED_RECV: {
+                wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
+                ESP_LOGI(TAG, "Received Wi-Fi credentials"
+                         "\n\tSSID     : %s\n\tPassword : %s",
+                         (const char *) wifi_sta_cfg->ssid,
+                         (const char *) wifi_sta_cfg->password);
+                break;
+            }
+            case WIFI_PROV_CRED_FAIL: {
+                wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
+                ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
+                         "\n\tPlease reset to factory and retry provisioning",
+                         (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
+                         "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+                break;
+            }
+            case WIFI_PROV_CRED_SUCCESS:
+                ESP_LOGI(TAG, "Provisioning successful");
+                break;
+            case WIFI_PROV_END:
+                /* De-initialize manager once provisioning is finished */
+                wifi_prov_mgr_deinit();
+                break;
+            default:
+                break;
+        }
+    }
 }
 
-void micro_ros_task(void *arg)
+esp_err_t init_fs(void)
 {
-	rcl_allocator_t allocator = rcl_get_default_allocator();
-	rclc_support_t support;
+	static const char *TAG = "fs_init";
+    esp_vfs_spiffs_conf_t conf = {.base_path = "/www",
+                                  .partition_label = NULL,
+                                  .max_files = 5,
+                                  .format_if_mount_failed = false};
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
-	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-	RCCHECK(rcl_init_options_init(&init_options, allocator));
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+        return ESP_FAIL;
+    }
 
-	rmw_init_options_t *rmw_options =
-	  rcl_init_options_get_rmw_init_options(&init_options);
-
-	// while (rmw_uros_discover_agent(rmw_options) == RCL_RET_TIMEOUT) {
-	// 	printf("micro-ROS agent not found... Trying again.\n");
-	// }
-	// Need some way to get these onto the device
-	RCCHECK(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
-	
-	// create init_options
-	RCCHECK(rclc_support_init_with_options(
-	  &support, 0, NULL, &init_options, &allocator));
-
-	// create node
-	rcl_node_t node;
-	RCCHECK(
-	  rclc_node_init_default(&node, "esp32_int32_publisher", "", &support));
-
-	// create publisher
-	RCCHECK(rclc_publisher_init_default(
-	  &publisher,
-	  &node,
-	  ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-	  "freertos_int32_publisher"));
-
-	// create timer,
-	rcl_timer_t timer;
-	const unsigned int timer_timeout = 1000;
-	RCCHECK(rclc_timer_init_default(
-	  &timer, &support, RCL_MS_TO_NS(timer_timeout), timer_callback));
-
-	// create executor
-	rclc_executor_t executor;
-	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-	RCCHECK(rclc_executor_add_timer(&executor, &timer));
-
-	msg.data = 0;
-
-	while (1) {
-		rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-		usleep(10000);
-	}
-
-	// free resources
-	RCCHECK(rcl_publisher_fini(&publisher, &node));
-	RCCHECK(rcl_node_fini(&node));
-
-	vTaskDelete(NULL);
+    size_t total = 0, used = 0;
+    ret = esp_spiffs_info(NULL, &total, &used);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+    return ESP_OK;
 }
 
 void app_main(void)
 {
-	init_wifi();
+    /* NVS INIT */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
 
-	// pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
-	xTaskCreate(micro_ros_task,
-				"uros_task",
-				CONFIG_MICRO_ROS_APP_STACK,
-				NULL,
-				CONFIG_MICRO_ROS_APP_TASK_PRIO,
-				NULL);
+	/* FILE SYSTEM INIT */
+    ESP_ERROR_CHECK(init_fs());
+
+	/* EVENT LOOP INIT */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+	/* WEBSERVER INIT */
+    ESP_ERROR_CHECK(esp_netif_init());
+
+	esp_netif_create_default_wifi_ap();
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+	ESP_ERROR_CHECK(rest_server_start("/www"));
+
+	/* PROVISIONING INIT */
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID,
+                                             &wifi_prov_event_handler, NULL));
+
+    wifi_prov_mgr_config_t config = {
+        .scheme = wifi_prov_scheme_softap,
+        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+    };
+	ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+
+	wifi_prov_scheme_softap_set_httpd_handle((void*)rest_server_get_httpd_handle());
+
+	ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL, "hello_world", "hello_world") );
 }

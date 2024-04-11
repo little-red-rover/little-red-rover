@@ -8,14 +8,21 @@ from launch import LaunchDescription
 from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch.actions import IncludeLaunchDescription
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    rosbridge = IncludeLaunchDescription(
+            XMLLaunchDescriptionSource([os.path.join(
+                get_package_share_directory('rosbridge_server'), 'launch'), '/rosbridge_websocket_launch.xml'])
+        )
 
     return LaunchDescription([
+        rosbridge,
         ExecuteProcess(
-            cmd=['gz', 'sim', '-r', '-s', '--headless-rendering', '-v', '4', 'visualize_lidar.sdf'],
-            output='screen'
+            cmd=['gz', 'sim', '-r', '-s', '--headless-rendering', '-v', '4', 'shapes.sdf'],
+            output="screen"
         ),
         ExecuteProcess(
             cmd=['gz', 'launch', '-v', '4', '/websocket.gzlaunch']

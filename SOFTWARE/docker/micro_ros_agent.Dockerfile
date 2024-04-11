@@ -6,7 +6,7 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /ros2_setup.bash
 RUN mkdir -p /micro_ros_ws/src
 
 WORKDIR "/micro_ros_ws"
-RUN git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
+RUN git clone --depth=1 -b $ROS_DISTRO --single-branch --shallow-submodules https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
 
 RUN apt update && \
 	rosdep update && \ 

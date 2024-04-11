@@ -6,7 +6,7 @@ RUN apt-get update && \
 
 RUN mkdir -p ~/esp && \
 	cd ~/esp && \
-	git clone --depth=1 -b v5.2 --recursive --shallow-submodules https://github.com/espressif/esp-idf.git
+	git clone --depth=1 -b v5.2 --single-branch --recursive --shallow-submodules https://github.com/espressif/esp-idf.git
 
 RUN cd ~/esp/esp-idf && \
 	./install.sh esp32,esp32c3
