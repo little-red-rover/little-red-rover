@@ -149,6 +149,22 @@ void wifi_mgr_init(){
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "little red rover",
+            .ssid_len = 0,
+            .channel = 0,
+            .password = "",
+            .max_connection = 14,
+            .authmode = WIFI_AUTH_OPEN,
+            .pmf_cfg = {
+                    .required = true,
+            },
+        },
+    };
+    
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+
 
     ESP_LOGI("AP", "ESP_WIFI_MODE_AP");
     esp_netif_t *esp_netif_ap = esp_netif_create_default_wifi_ap();
@@ -172,9 +188,11 @@ void wifi_mgr_init(){
 
 	wifi_prov_scheme_softap_set_httpd_handle((void*)rest_server_get_httpd_handle());
 
+    /* DNS REDIRECT INIT*/
     dns_server_config_t dns_config = DNS_SERVER_CONFIG_SINGLE("*" /* all A queries */, "WIFI_AP_DEF" /* softAP netif ID */);
     start_dns_server(&dns_config);
 
+    /* */
     bool provisioned = false;
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
@@ -182,7 +200,7 @@ void wifi_mgr_init(){
         ESP_ERROR_CHECK(
             esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
-	    ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL, "hello_world", "hello_world") );
+	    ESP_ERROR_CHECK( wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, NULL, "", "") );
     } else {
         ESP_LOGI("ugh", "Already provisioned, starting Wi-Fi STA");
 
