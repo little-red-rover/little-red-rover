@@ -2,5 +2,12 @@
     "name": "micro_ros_esp_idf",
     "service": "micro_ros_esp_idf",
     "dockerComposeFile": "../../docker/docker-compose.yml",
-    "workspaceFolder": "/esp32_firmware/"
+    "workspaceFolder": "/esp32_firmware/",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack"
+            ]
+        }
+    }
 }

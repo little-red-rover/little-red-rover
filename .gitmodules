@@ -1,3 +1,6 @@
 [submodule "SOFTWARE/esp32_firmware/components/micro_ros_espidf_component"]
 	path = SOFTWARE/esp32_firmware/components/micro_ros_espidf_component
 	url = https://github.com/micro-ROS/micro_ros_espidf_component.git
+[submodule "SOFTWARE/esp32_firmware/components/esp32-wifi-manager"]
+	path = SOFTWARE/esp32_firmware/components/esp32-wifi-manager
+	url = https://github.com/forGGe/esp32-wifi-manager.git

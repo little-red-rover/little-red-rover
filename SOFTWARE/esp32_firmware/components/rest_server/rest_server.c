@@ -128,10 +128,19 @@ static esp_err_t rest_common_get_handler(httpd_req_t* req)
 
     int fd = open(filepath, O_RDONLY, 0);
     if (fd == -1) {
-        ESP_LOGE(TAG, "Failed to open file : %s", filepath);
-        /* Respond with 500 Internal Server Error */
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
-        return ESP_FAIL;
+        // ESP_LOGE(TAG, "Failed to open file : %s", filepath);
+        // /* Respond with 500 Internal Server Error */
+        // httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
+        // return ESP_FAIL;
+        // Set status
+        httpd_resp_set_status(req, "302 Temporary Redirect");
+        // Redirect to the "/" root directory
+        httpd_resp_set_hdr(req, "Location", "/");
+        // iOS requires content in the response to detect a captive portal, simply redirecting is not sufficient.
+        httpd_resp_send(req, "Redirect to the captive portal", HTTPD_RESP_USE_STRLEN);
+
+        ESP_LOGI(TAG, "Redirecting to root");
+        return ESP_OK;
     }
 
     char* chunk = _rest_context->scratch;
@@ -162,6 +171,20 @@ static esp_err_t rest_common_get_handler(httpd_req_t* req)
     return ESP_OK;
 }
 
+// HTTP Error (404) Handler - Redirects all requests to the root page
+esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
+{
+    // Set status
+    httpd_resp_set_status(req, "302 Temporary Redirect");
+    // Redirect to the "/" root directory
+    httpd_resp_set_hdr(req, "Location", "/");
+    // iOS requires content in the response to detect a captive portal, simply redirecting is not sufficient.
+    httpd_resp_send(req, "Redirect to the captive portal", HTTPD_RESP_USE_STRLEN);
+
+    ESP_LOGI(TAG, "Redirecting to root");
+    return ESP_OK;
+}
+
 esp_err_t rest_server_start(const char* base_path)
 {
     REST_CHECK(base_path, "wrong base path", err);
@@ -171,6 +194,7 @@ esp_err_t rest_server_start(const char* base_path)
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
+    config.lru_purge_enable = true;
 
     ESP_LOGI(TAG, "Starting internal HTTP server");
     REST_CHECK(httpd_start(&_server_handle, &config) == ESP_OK, "Start server failed", err_start);
@@ -181,6 +205,7 @@ esp_err_t rest_server_start(const char* base_path)
                                   .handler = rest_common_get_handler,
                                   .user_ctx = _rest_context};
     httpd_register_uri_handler(_server_handle, &common_get_uri);
+    httpd_register_err_handler(_server_handle, HTTPD_404_NOT_FOUND, http_404_error_handler);
 
     return ESP_OK;
 err_start:
