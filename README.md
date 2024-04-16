@@ -1,5 +1,7 @@
 # Little Red Rover
 
+*WIP: Details on this page refer to planned capabilities, not the current status of the project. Think of this as a roadmap.* 
+
 ROS enabled robots are (really) expensive, preventing many aspiring robotic engineers from accessing powerful ROS tools.
 
 Little Red Rover (LLR) is a highly capable, differential drive, ROS 2 robot designed for an amateur budget.
