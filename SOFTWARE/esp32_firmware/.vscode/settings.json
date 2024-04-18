@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "esp_system.h": "c"
+        "esp_system.h": "c",
+        "esp_wifi_default.h": "c",
+        "future": "c",
+        "*.inc": "c",
+        "stdint.h": "c",
+        "cstdlib": "c",
+        "rmw_microros.h": "c"
     }
 }

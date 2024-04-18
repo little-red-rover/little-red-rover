@@ -22,4 +22,5 @@ RUN source /ros2_setup.bash && \
 
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
 
-CMD bash -c "source /ros2_setup.bash && ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -d"
+# CMD bash -c "source /ros2_setup.bash && ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -d"
+CMD bash -c "source /ros2_setup.bash"
