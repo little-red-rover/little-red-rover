@@ -10,6 +10,7 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "nvs_flash.h"
 
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
@@ -21,6 +22,8 @@
 
 #include <rmw_microros/rmw_microros.h>
 #include <uros_network_interfaces.h>
+
+#include "wifi_mgr.h"
 
 #define RCCHECK(fn)                                                            \
 	{                                                                          \
@@ -54,6 +57,8 @@
 	} while (0)
 
 static const char *TAG = "micro_ros_mgr";
+static char MICRO_ROS_AGENT_IP[16];
+
 enum states
 {
 	WAITING_AGENT,
@@ -71,11 +76,6 @@ rcl_publisher_t publisher;
 rcl_init_options_t init_options;
 rmw_init_options_t rmw_options;
 std_msgs__msg__Int32 msg;
-
-bool micro_ros_init_successful;
-
-// #define CONFIG_MICRO_ROS_AGENT_IP =
-// #define CONFIG_MICRO_ROS_AGENT_PORT "8001"
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
@@ -146,7 +146,38 @@ void init_middleware()
 
 	// Need some way to get these onto the device
 	RCCHECK(rmw_uros_options_set_udp_address(
-	  CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, &rmw_options));
+	  MICRO_ROS_AGENT_IP, "8001", &rmw_options));
+}
+
+esp_err_t get_micro_ros_agent_ip()
+{
+	nvs_handle_t my_handle;
+	esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
+	if (err != ESP_OK) {
+		ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+	} else {
+		size_t l = sizeof(MICRO_ROS_AGENT_IP);
+		err = nvs_get_str(my_handle, "uros_ag_ip", MICRO_ROS_AGENT_IP, &l);
+		switch (err) {
+			case ESP_OK:
+				ESP_LOGI(TAG,
+						 "Retrieved IP (%s) for micro ros agent IP.",
+						 MICRO_ROS_AGENT_IP);
+				break;
+			case ESP_ERR_NVS_NOT_FOUND:
+				ESP_LOGI(TAG, "Agent IP has not been set.");
+				nvs_close(my_handle);
+				return ESP_FAIL;
+				break;
+			default:
+				ESP_LOGI(TAG, "Error (%s) reading!\n", esp_err_to_name(err));
+				nvs_close(my_handle);
+				return ESP_FAIL;
+		}
+
+		nvs_close(my_handle);
+	}
+	return ESP_OK;
 }
 
 void micro_ros_task(void *arg)
@@ -155,6 +186,9 @@ void micro_ros_task(void *arg)
 
 	msg.data = 0;
 
+	while (get_micro_ros_agent_ip() != ESP_OK) {
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+	}
 	init_middleware();
 
 	while (true) {
