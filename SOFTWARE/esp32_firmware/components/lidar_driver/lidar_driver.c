@@ -130,6 +130,8 @@ static void lidar_driver_task(void *arg)
 					 scan_data.crc8);
 		}
 	}
+
+	vTaskDelete(NULL);
 }
 
 void lidar_driver_init()

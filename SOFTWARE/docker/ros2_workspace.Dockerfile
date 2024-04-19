@@ -51,7 +51,7 @@ RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.b
 # https://github.com/gazebosim/gz-sensors/issues/26
 RUN echo "export LIBGL_ALWAYS_SOFTWARE=true" >> /ros2_setup.bash
 
-RUN echo "alias start_sim_vis='(cd /little_red_rover_ws && colcon build --symlink-install && ros2 launch little_red_robot lrr_vis_sim.launch.py)'" >> /root/.bashrc
+RUN echo "alias start_sim_vis='(cd /little_red_rover_ws && colcon build --symlink-install && ros2 launch little_red_rover lrr_vis_sim.launch.py)'" >> /root/.bashrc
 RUN echo "alias lrr_connect='. /tools/wifi_auth.bash'" >> /root/.bashrc
 
 RUN echo "export IDF_PATH=/tools/idf" >> /root/.bashrc
