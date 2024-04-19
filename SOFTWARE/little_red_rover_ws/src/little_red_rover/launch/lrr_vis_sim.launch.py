@@ -1,5 +1,3 @@
-"""Launch Gazebo server and client with command line arguments."""
-"""Spawn robot from URDF file."""
 # https://gist.github.com/rfzeg/63d824f0c6ed44da639e9630a76fbc6c
 
 import os
@@ -14,8 +12,7 @@ from pathlib import Path
 
 def generate_launch_description():
     try:
-        robot_ip = Path('/little_red_rover_ws/src/robot_ip.txt').read_text()
-        print(robot_ip)
+        robot_ip = Path('/little_red_rover_ws/src/robot_ip.txt').read_text().strip()
     except:
         print("Cannot read /little_red_rover_ws/src/robot_ip.txt.")
         print("Please connect to the robot's wifi hotspot, then run 'lrr_connect' in your terminal.")
@@ -27,6 +24,9 @@ def generate_launch_description():
             XMLLaunchDescriptionSource([os.path.join(
                 get_package_share_directory('rosbridge_server'), 'launch'), '/rosbridge_websocket_launch.xml']
             )
+        ),
+        ExecuteProcess(
+            cmd=['curl', '-s', '-X', 'GET', robot_ip + "/set-agent-ip"],
         ),
         ExecuteProcess(
             cmd=['gz', 'sim', '-r', '-s', '--headless-rendering', '-v', '4', 'shapes.sdf'],

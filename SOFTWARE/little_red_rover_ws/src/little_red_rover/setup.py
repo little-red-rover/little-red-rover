@@ -1,8 +1,8 @@
-from glob import glob
 from setuptools import find_packages, setup
 import os
+from glob import glob
 
-package_name = 'llr_base'
+package_name = 'little_red_rover'
 
 setup(
     name=package_name,
@@ -13,17 +13,17 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name), glob('launch/*.launch.py'))
-    ], 
+    ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Michael Crum',
-    maintainer_email='michael@michael-crum.com',
-    description='Base package for Little Red Rover (LLR)',
-    license='GPL-3.0',
+    maintainer='root',
+    maintainer_email='micacer48@gmail.com',
+    description='TODO: Package description',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lidar_plotter = llr_base.lidar_plotter:main'
+            'base = little_red_rover.base:main'
         ],
     },
 )

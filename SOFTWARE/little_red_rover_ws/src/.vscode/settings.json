@@ -1,0 +1,16 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/little_red_rover_ws/build/little_red_rover",
+        "/little_red_rover_ws/install/little_red_rover/lib/python3.10/site-packages",
+        "/micro_ros_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/little_red_rover_ws/build/little_red_rover",
+        "/little_red_rover_ws/install/little_red_rover/lib/python3.10/site-packages",
+        "/micro_ros_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}
