@@ -12,9 +12,13 @@
 
 #include "micro_ros_mgr.h"
 
+#include "lidar_driver.h"
+
 void app_main(void)
 {
 	wifi_mgr_init();
 
 	micro_ros_mgr_init();
+
+	lidar_driver_init();
 }

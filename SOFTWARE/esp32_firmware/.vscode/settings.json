@@ -6,6 +6,7 @@
         "*.inc": "c",
         "stdint.h": "c",
         "cstdlib": "c",
-        "rmw_microros.h": "c"
+        "rmw_microros.h": "c",
+        "int32.h": "c"
     }
 }
