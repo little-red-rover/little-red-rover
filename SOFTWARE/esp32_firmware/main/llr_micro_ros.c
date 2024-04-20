@@ -14,6 +14,7 @@
 
 #include "lidar_driver.h"
 
+#include <sensor_msgs/msg/laser_scan.h>
 #include <std_msgs/msg/int32.h>
 
 void app_main(void)
@@ -22,7 +23,13 @@ void app_main(void)
 
 	register_publisher(ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 					   "int_pub");
+
+	// Publishers must be registered BEFORE calling micro_ros_mgr_init
+	rcl_publisher_t *lidar_publisher = register_publisher(
+	  ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+	  "lrr_lidar_scan");
+
 	micro_ros_mgr_init();
 
-	lidar_driver_init();
+	lidar_driver_init(lidar_publisher);
 }

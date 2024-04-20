@@ -9,17 +9,22 @@
 #include "sdkconfig.h"
 #include "sensor_msgs/msg/laser_scan.h"
 #include <stdio.h>
+#include <time.h>
 
 #include "lidar_driver.h"
+#include <rcl/rcl.h>
 
-#define ECHO_TEST_TXD (4)
-#define ECHO_TEST_RXD (20)
-#define ECHO_TEST_RTS (UART_PIN_NO_CHANGE)
-#define ECHO_TEST_CTS (UART_PIN_NO_CHANGE)
+#include <math.h>
+#define deg_2_rad(angleInDegrees) ((angleInDegrees)*M_PI / 180.0)
 
-#define ECHO_UART_PORT_NUM (0)
-#define ECHO_UART_BAUD_RATE (230400)
-#define ECHO_TASK_STACK_SIZE (2048)
+#define LIDAR_TEST_TXD (4)
+#define LIDAR_TEST_RXD (20)
+#define LIDAR_TEST_RTS (UART_PIN_NO_CHANGE)
+#define LIDAR_TEST_CTS (UART_PIN_NO_CHANGE)
+
+#define LIDAR_UART_PORT_NUM (0)
+#define LIDAR_UART_BAUD_RATE (230400)
+#define LIDAR_TASK_STACK_SIZE (2048)
 #define BUF_SIZE 1024
 
 static const char *TAG = "lidar driver";
@@ -27,6 +32,8 @@ static const char *TAG = "lidar driver";
 #define POINT_PER_PACK 12
 #define HEADER 0x54
 #define VERLEN 0x2C
+
+rcl_publisher_t *lidar_publisher;
 
 typedef struct
 {
@@ -80,10 +87,46 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len)
 	}
 	return crc;
 }
+
+sensor_msgs__msg__LaserScan scan_msg;
+
+float ranges[POINT_PER_PACK];
+float intensities[POINT_PER_PACK];
+
+rcl_ret_t publish_scan(const LiDARFrame *scan)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	scan_msg.header.stamp.sec = ts.tv_sec;
+	scan_msg.header.stamp.nanosec = ts.tv_nsec;
+
+	scan_msg.angle_min = deg_2_rad(scan->start_angle / 100);
+	scan_msg.angle_max = deg_2_rad(scan->end_angle / 100);
+	scan_msg.angle_increment =
+	  deg_2_rad((scan_msg.angle_max - scan_msg.angle_min) / POINT_PER_PACK);
+	scan_msg.time_increment = scan_msg.angle_increment / deg_2_rad(scan->speed);
+	// Pulled this from a logic analyzer, can't find it in the documentation
+	scan_msg.scan_time = 0.001;
+	scan_msg.range_min = 0.1;
+	scan_msg.range_max = 5.0;
+
+	for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
+		ranges[i] = scan->points[i].distance / 1000.0;
+		intensities[i] = scan->points[i].intensity;
+	}
+	scan_msg.ranges.data = &ranges;
+	scan_msg.ranges.capacity = POINT_PER_PACK;
+	scan_msg.ranges.size = POINT_PER_PACK;
+	scan_msg.intensities.data = &intensities;
+	scan_msg.intensities.capacity = POINT_PER_PACK;
+	scan_msg.intensities.size = POINT_PER_PACK;
+	return rcl_publish(lidar_publisher, &scan_msg, NULL);
+}
+
 static void lidar_driver_task(void *arg)
 {
 	uart_config_t uart_config = {
-		.baud_rate = ECHO_UART_BAUD_RATE,
+		.baud_rate = LIDAR_UART_BAUD_RATE,
 		.data_bits = UART_DATA_8_BITS,
 		.parity = UART_PARITY_DISABLE,
 		.stop_bits = UART_STOP_BITS_1,
@@ -93,22 +136,22 @@ static void lidar_driver_task(void *arg)
 	int intr_alloc_flags = 0;
 
 	ESP_ERROR_CHECK(uart_driver_install(
-	  ECHO_UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
+	  LIDAR_UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
 
-	ESP_ERROR_CHECK(uart_param_config(ECHO_UART_PORT_NUM, &uart_config));
+	ESP_ERROR_CHECK(uart_param_config(LIDAR_UART_PORT_NUM, &uart_config));
 
-	ESP_ERROR_CHECK(uart_set_pin(ECHO_UART_PORT_NUM,
-								 ECHO_TEST_TXD,
-								 ECHO_TEST_RXD,
-								 ECHO_TEST_RTS,
-								 ECHO_TEST_CTS));
+	ESP_ERROR_CHECK(uart_set_pin(LIDAR_UART_PORT_NUM,
+								 LIDAR_TEST_TXD,
+								 LIDAR_TEST_RXD,
+								 LIDAR_TEST_RTS,
+								 LIDAR_TEST_CTS));
 
 	uint8_t start_chars[2] = { 0x00, 0x00 };
 	LiDARFrame scan_data;
 
 	while (1) {
-		int len = uart_read_bytes(
-		  ECHO_UART_PORT_NUM, &start_chars, 1, 20 / portTICK_PERIOD_MS);
+		uart_read_bytes(
+		  LIDAR_UART_PORT_NUM, &start_chars, 1, 20 / portTICK_PERIOD_MS);
 		// Look for start bytes, 0x54 0x2C
 		if (start_chars[1] != HEADER || start_chars[0] != VERLEN) {
 			start_chars[1] = start_chars[0];
@@ -117,10 +160,10 @@ static void lidar_driver_task(void *arg)
 		scan_data.header = HEADER;
 		scan_data.ver_len = VERLEN;
 
-		len = uart_read_bytes(ECHO_UART_PORT_NUM,
-							  ((uint8_t *)&scan_data) + 2,
-							  sizeof(scan_data) - 2,
-							  20 / portTICK_PERIOD_MS);
+		uart_read_bytes(LIDAR_UART_PORT_NUM,
+						((uint8_t *)&scan_data) + 2,
+						sizeof(scan_data) - 2,
+						20 / portTICK_PERIOD_MS);
 		uint8_t checksum =
 		  CalCRC8((uint8_t *)&(scan_data), sizeof(scan_data) - 1);
 		if (checksum != scan_data.crc8) {
@@ -128,17 +171,20 @@ static void lidar_driver_task(void *arg)
 					 "Invalid checksum, got %d, expected %d",
 					 checksum,
 					 scan_data.crc8);
+		} else {
+			publish_scan(&scan_data);
 		}
 	}
 
 	vTaskDelete(NULL);
 }
 
-void lidar_driver_init()
+void lidar_driver_init(rcl_publisher_t *pub)
 {
+	lidar_publisher = pub;
 	xTaskCreate(lidar_driver_task,
 				"lidar_driver_task",
-				ECHO_TASK_STACK_SIZE,
+				LIDAR_TASK_STACK_SIZE,
 				NULL,
 				10,
 				NULL);

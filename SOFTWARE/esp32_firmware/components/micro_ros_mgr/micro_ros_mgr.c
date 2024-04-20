@@ -154,12 +154,7 @@ rcl_ret_t create_entities()
 	RCCHECK(
 	  rclc_node_init_default(&node, "int32_publisher_rclc", "", &support));
 
-	// create publisher
-	// RCCHECK(rclc_publisher_init_best_effort(
-	//   &publisher,
-	//   &node,
-	//   ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-	//   "std_msgs_msg_Int32"));
+	// create publishers
 	create_publishers();
 
 	// create timer,

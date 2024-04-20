@@ -25,3 +25,15 @@ services:
         volumes:
             - ../esp32_firmware:/esp32_firmware
             - /dev:/dev
+    foxglove_bridge:
+        image: foxglove_bridge
+        build:
+            context: ..
+            dockerfile: docker/foxglove_bridge.Dockerfile
+        ports:
+            - "8765:8765"
+    foxglove_studio:
+        image: ghcr.io/foxglove/studio:latest
+        container_name: foxglove
+        ports:
+            - "8080:8080"
