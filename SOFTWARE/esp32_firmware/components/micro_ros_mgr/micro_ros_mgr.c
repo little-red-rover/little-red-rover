@@ -78,7 +78,14 @@ rcl_init_options_t init_options;
 rmw_init_options_t rmw_options;
 std_msgs__msg__Int32 msg;
 
-rcl_publisher_t *publishers;
+typedef struct
+{
+	rosidl_message_type_support_t *type_support;
+	char *topic_name;
+	rcl_publisher_t publisher;
+} publisher_info;
+
+publisher_info *publishers;
 size_t num_publishers = 0;
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
@@ -86,41 +93,53 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 	RCLC_UNUSED(last_call_time);
 	if (timer != NULL) {
 		printf("Publishing: %d\n", (int)msg.data);
-		RCSOFTCHECK(rcl_publish(publishers, &msg, NULL));
+		RCSOFTCHECK(rcl_publish(&(publishers->publisher), &msg, NULL));
 		msg.data++;
 	}
 }
 
 void init_publisher_mem()
 {
-	publishers = (rcl_publisher_t *)malloc(sizeof(rcl_publisher_t));
-}
-
-void free_publisher_mem()
-{
-	for (size_t i = 0; i < num_publishers; i++) {
-		rcl_publisher_fini(publishers + i, &node);
-	}
-	free(publishers);
+	publishers = (publisher_info *)malloc(sizeof(publisher_info));
 }
 
 rcl_publisher_t *register_publisher(
   const rosidl_message_type_support_t *type_support,
-  const char *name)
+  const char *topic_name)
 {
 	if (num_publishers == 0)
 		init_publisher_mem();
 	else {
-		publishers = (rcl_publisher_t *)realloc(
-		  publishers, sizeof(rcl_publisher_t) * (num_publishers + 1));
+		publishers = (publisher_info *)realloc(
+		  publishers, sizeof(publisher_info) * (num_publishers + 1));
 	}
-	rcl_publisher_t *cur_publisher = publishers + num_publishers;
-
-	RCCHECK(rclc_publisher_init_best_effort(
-	  cur_publisher, &node, type_support, name));
+	publisher_info *cur_publisher = publishers + num_publishers;
+	cur_publisher->type_support = type_support;
+	cur_publisher->topic_name = topic_name;
 
 	num_publishers++;
-	return cur_publisher;
+	return &(cur_publisher->publisher);
+}
+
+void create_publishers()
+{
+	for (uint16_t i = 0; i < num_publishers; i++) {
+		ESP_LOGI(
+		  "testing", "Creating publisher %s", ((publishers + i)->topic_name));
+		RCCHECK(rclc_publisher_init_best_effort(&((publishers + i)->publisher),
+												&node,
+												(publishers + i)->type_support,
+												(publishers + i)->topic_name));
+	}
+}
+
+void destroy_publishers()
+{
+	for (size_t i = 0; i < num_publishers; i++) {
+		ESP_LOGI(
+		  "testing", "Destroying publisher %s", ((publishers + i)->topic_name));
+		rcl_publisher_fini(&((publishers + i)->publisher), &node);
+	}
 }
 
 rcl_ret_t create_entities()
@@ -141,9 +160,7 @@ rcl_ret_t create_entities()
 	//   &node,
 	//   ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 	//   "std_msgs_msg_Int32"));
-
-	register_publisher(ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-					   "int_pub");
+	create_publishers();
 
 	// create timer,
 	const unsigned int timer_timeout = 1000;
@@ -163,7 +180,7 @@ rcl_ret_t destroy_entities()
 	rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
 	(void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
 
-	free_publisher_mem();
+	destroy_publishers();
 	rcl_timer_fini(&timer);
 	rcl_node_fini(&node);
 	rcl_shutdown(&support.context);
@@ -183,7 +200,6 @@ void init_middleware()
 
 	rmw_options = *rcl_init_options_get_rmw_init_options(&init_options);
 
-	// Need some way to get these onto the device
 	RCCHECK(rmw_uros_options_set_udp_address(
 	  MICRO_ROS_AGENT_IP, "8001", &rmw_options));
 }
