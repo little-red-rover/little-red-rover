@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "digikey_imports")(type "KiCad")(uri "${KIPRJMOD}/digikey_imports.pretty")(options "")(descr ""))
+)
