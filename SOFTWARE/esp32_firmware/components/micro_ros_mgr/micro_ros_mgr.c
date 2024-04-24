@@ -73,7 +73,6 @@ rcl_node_t node;
 rcl_timer_t timer;
 rclc_executor_t executor;
 rcl_allocator_t allocator;
-rcl_publisher_t publisher;
 rcl_init_options_t init_options;
 rmw_init_options_t rmw_options;
 std_msgs__msg__Int32 msg;
@@ -87,16 +86,6 @@ typedef struct
 
 publisher_info *publishers;
 size_t num_publishers = 0;
-
-void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
-{
-	RCLC_UNUSED(last_call_time);
-	if (timer != NULL) {
-		printf("Publishing: %d\n", (int)msg.data);
-		RCSOFTCHECK(rcl_publish(&(publishers->publisher), &msg, NULL));
-		msg.data++;
-	}
-}
 
 void init_publisher_mem()
 {
@@ -156,11 +145,6 @@ rcl_ret_t create_entities()
 
 	// create publishers
 	create_publishers();
-
-	// create timer,
-	const unsigned int timer_timeout = 1000;
-	RCCHECK(rclc_timer_init_default(
-	  &timer, &support, RCL_MS_TO_NS(timer_timeout), timer_callback));
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();

@@ -100,24 +100,28 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
 	scan_msg.header.stamp.sec = ts.tv_sec;
 	scan_msg.header.stamp.nanosec = ts.tv_nsec;
 
-	scan_msg.angle_min = deg_2_rad(scan->start_angle / 100);
-	scan_msg.angle_max = deg_2_rad(scan->end_angle / 100);
+	scan_msg.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
+	scan_msg.angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
+	if (scan_msg.angle_max < scan_msg.angle_min) {
+		scan_msg.angle_max = scan_msg.angle_max + 2 * M_PI;
+	}
 	scan_msg.angle_increment =
-	  deg_2_rad((scan_msg.angle_max - scan_msg.angle_min) / POINT_PER_PACK);
-	scan_msg.time_increment = scan_msg.angle_increment / deg_2_rad(scan->speed);
+	  (scan_msg.angle_max - scan_msg.angle_min) / (POINT_PER_PACK - 1);
+	scan_msg.time_increment =
+	  scan_msg.angle_increment / deg_2_rad((float)(scan->speed));
 	// Pulled this from a logic analyzer, can't find it in the documentation
 	scan_msg.scan_time = 0.001;
 	scan_msg.range_min = 0.1;
 	scan_msg.range_max = 5.0;
 
 	for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
-		ranges[i] = scan->points[i].distance / 1000.0;
-		intensities[i] = scan->points[i].intensity;
+		ranges[i] = (float)(scan->points[i].distance) / 1000.0;
+		intensities[i] = (float)(scan->points[i].intensity);
 	}
-	scan_msg.ranges.data = &ranges;
+	scan_msg.ranges.data = (float *)&ranges;
 	scan_msg.ranges.capacity = POINT_PER_PACK;
 	scan_msg.ranges.size = POINT_PER_PACK;
-	scan_msg.intensities.data = &intensities;
+	scan_msg.intensities.data = (float *)&intensities;
 	scan_msg.intensities.capacity = POINT_PER_PACK;
 	scan_msg.intensities.size = POINT_PER_PACK;
 	return rcl_publish(lidar_publisher, &scan_msg, NULL);
