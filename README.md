@@ -18,13 +18,13 @@ LRR is also perfect for robotics hobbyists interested in elevating their work. B
 
 Little Red Rover is currently in developement, and the specs below may or may not be implemented already. For now, this section serves as a roadmap.
 
-### Software
+### Software ([README](https://github.com/usedhondacivic/little_red_rover/tree/main/SOFTWARE))
 * ESP32 onboard, running [micro-ROS](https://micro.ros.org/)
     * Publishes sensor data and reacts to movement commands
 * Dockerized development environment runs on any OS and communicates with the rover wirelessly over UDP
     * Interact with the robot just as you would any ROS node
 
-### Hardware
+### Hardware ([README](https://github.com/usedhondacivic/little_red_rover/tree/main/HARDWARE))
 * [FHL-LD20 Lidar](https://www.youyeetoo.com/products/youyeetoo-fhl-ld20)
 * Custom circuit board integrated as the rovers body
 * Wheel encoders and IMU for odometry
@@ -40,7 +40,7 @@ Little Red Rover is currently in developement, and the specs below may or may no
 ## Repo Structure
 
 * `/SOFTWARE`: ROS and micro-ROS code, along with the Docker developement infrastructure. See `/SOFTWARE/README.md` for more details
-* `/HARDWARE`: KiCad PCB design files, and [SKiDL](https://github.com/devbisme/skidl) circuit description. See `/HARDWARE/README.md` for more details
+* `/HARDWARE`: KiCad PCB design files + information about the CAD in OnShape. See `/HARDWARE/README.md` for more details
 
 ## Thanks
 
