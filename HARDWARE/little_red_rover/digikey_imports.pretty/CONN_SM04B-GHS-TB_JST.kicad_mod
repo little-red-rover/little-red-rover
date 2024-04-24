@@ -56,4 +56,9 @@
   (pad "4" smd rect (at 1.875 -1.8757) (size 0.6604 1.7018) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 0bf74fc9-31fc-4b77-8964-e7db539582b1))
   (pad "5" smd rect (at -3.8 1.2 180) (size 1.0922 2.794) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 1ea7b6ea-d774-411d-a787-aab83d79e516))
   (pad "6" smd rect (at 3.8 1.2 180) (size 1.0922 2.794) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp 1bded24d-550d-4227-9118-ea9c5f844b52))
+  (model ":KICAD7_3DMODEL_DIR:SM04B-GHS-TB.STEP"
+    (offset (xyz 0 -0.5 0))
+    (scale (xyz 1 1 1))
+    (rotate (xyz -90 0 0))
+  )
 )
