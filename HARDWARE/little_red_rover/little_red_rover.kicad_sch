@@ -4240,10 +4240,10 @@
   (symbol (lib_id "Mechanical:MountingHole") (at 354.33 144.78 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 693c942b-7604-44a6-be14-cdd88e4bdee5)
-    (property "Reference" "H2" (at 356.87 143.51 0)
+    (property "Reference" "MH2" (at 356.87 143.51 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "MountingHole" (at 356.87 146.05 0)
+    (property "Value" "M3_threaded" (at 356.87 146.05 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "digikey_imports:m3_threaded_insert" (at 354.33 144.78 0)
@@ -4261,7 +4261,7 @@
     (instances
       (project "little_red_rover"
         (path "/6f482c50-19c8-43f6-b4b5-8739f6fb7866"
-          (reference "H2") (unit 1)
+          (reference "MH2") (unit 1)
         )
       )
     )
@@ -4641,10 +4641,10 @@
   (symbol (lib_id "Mechanical:MountingHole") (at 354.33 151.13 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 87d9682f-9159-4ae3-acf1-3c3ff28c8042)
-    (property "Reference" "H3" (at 356.87 149.86 0)
+    (property "Reference" "MH3" (at 356.87 149.86 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "MountingHole" (at 356.87 152.4 0)
+    (property "Value" "M3_threaded" (at 356.87 152.4 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "digikey_imports:m3_threaded_insert" (at 354.33 151.13 0)
@@ -4662,7 +4662,7 @@
     (instances
       (project "little_red_rover"
         (path "/6f482c50-19c8-43f6-b4b5-8739f6fb7866"
-          (reference "H3") (unit 1)
+          (reference "MH3") (unit 1)
         )
       )
     )
@@ -5497,10 +5497,10 @@
   (symbol (lib_id "Mechanical:MountingHole") (at 354.33 138.43 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid ee8d4cda-774b-420d-9170-f8d401f8f8c0)
-    (property "Reference" "H1" (at 356.87 137.16 0)
+    (property "Reference" "MH1" (at 356.87 137.16 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "MountingHole" (at 356.87 139.7 0)
+    (property "Value" "M3_threaded" (at 356.87 139.7 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "digikey_imports:m3_threaded_insert" (at 354.33 138.43 0)
@@ -5518,7 +5518,7 @@
     (instances
       (project "little_red_rover"
         (path "/6f482c50-19c8-43f6-b4b5-8739f6fb7866"
-          (reference "H1") (unit 1)
+          (reference "MH1") (unit 1)
         )
       )
     )
