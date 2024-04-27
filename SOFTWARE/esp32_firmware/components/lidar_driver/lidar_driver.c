@@ -12,6 +12,7 @@
 #include <time.h>
 
 #include "lidar_driver.h"
+#include "micro_ros_mgr.h"
 #include <rcl/rcl.h>
 
 #include <math.h>
@@ -124,6 +125,7 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
 	scan_msg.intensities.data = (float *)&intensities;
 	scan_msg.intensities.capacity = POINT_PER_PACK;
 	scan_msg.intensities.size = POINT_PER_PACK;
+
 	return rcl_publish(lidar_publisher, &scan_msg, NULL);
 }
 
@@ -186,6 +188,9 @@ static void lidar_driver_task(void *arg)
 void lidar_driver_init(rcl_publisher_t *pub)
 {
 	lidar_publisher = pub;
+	while (get_uros_state() != AGENT_CONNECTED) {
+		vTaskDelay(50 / portTICK_PERIOD_MS);
+	}
 	xTaskCreate(lidar_driver_task,
 				"lidar_driver_task",
 				LIDAR_TASK_STACK_SIZE,

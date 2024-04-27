@@ -60,13 +60,7 @@
 static const char *TAG = "micro_ros_mgr";
 static char MICRO_ROS_AGENT_IP[16];
 
-enum states
-{
-	WAITING_AGENT,
-	AGENT_AVAILABLE,
-	AGENT_CONNECTED,
-	AGENT_DISCONNECTED
-} state;
+enum states state;
 
 rclc_support_t support;
 rcl_node_t node;
@@ -75,6 +69,7 @@ rclc_executor_t executor;
 rcl_allocator_t allocator;
 rcl_init_options_t init_options;
 rmw_init_options_t rmw_options;
+rmw_context_t rmw_context;
 std_msgs__msg__Int32 msg;
 
 typedef struct
@@ -113,8 +108,9 @@ rcl_publisher_t *register_publisher(
 void create_publishers()
 {
 	for (uint16_t i = 0; i < num_publishers; i++) {
-		ESP_LOGI(
-		  "testing", "Creating publisher %s", ((publishers + i)->topic_name));
+		ESP_LOGI("create_publishers",
+				 "Creating publisher %s",
+				 ((publishers + i)->topic_name));
 		RCCHECK(rclc_publisher_init_best_effort(&((publishers + i)->publisher),
 												&node,
 												(publishers + i)->type_support,
@@ -125,48 +121,11 @@ void create_publishers()
 void destroy_publishers()
 {
 	for (size_t i = 0; i < num_publishers; i++) {
-		ESP_LOGI(
-		  "testing", "Destroying publisher %s", ((publishers + i)->topic_name));
+		ESP_LOGI("destroy_publishers",
+				 "Destroying publisher %s",
+				 ((publishers + i)->topic_name));
 		rcl_publisher_fini(&((publishers + i)->publisher), &node);
 	}
-}
-
-rcl_ret_t create_entities()
-{
-	// create init_options
-	if (rclc_support_init_with_options(
-		  &support, 0, NULL, &init_options, &allocator) != RCL_RET_OK) {
-		return RCL_RET_ERROR;
-	}
-
-	// create node
-	RCCHECK(
-	  rclc_node_init_default(&node, "int32_publisher_rclc", "", &support));
-
-	// create publishers
-	create_publishers();
-
-	// create executor
-	executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-	RCCHECK(rclc_executor_add_timer(&executor, &timer));
-
-	return RCL_RET_OK;
-}
-
-rcl_ret_t destroy_entities()
-{
-	rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
-	(void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
-
-	destroy_publishers();
-	rcl_timer_fini(&timer);
-	rcl_node_fini(&node);
-	rcl_shutdown(&support.context);
-	rclc_executor_fini(&executor);
-	rclc_support_fini(&support);
-
-	return RCL_RET_OK;
 }
 
 void init_middleware()
@@ -181,6 +140,44 @@ void init_middleware()
 
 	RCCHECK(rmw_uros_options_set_udp_address(
 	  MICRO_ROS_AGENT_IP, "8001", &rmw_options));
+}
+
+rcl_ret_t create_entities()
+{
+	// create init_options
+	if (rclc_support_init_with_options(
+		  &support, 0, NULL, &init_options, &allocator) != RCL_RET_OK) {
+		return RCL_RET_ERROR;
+	}
+
+	// create node
+	RCCHECK(rclc_node_init_default(&node, "little_red_rover", "", &support));
+
+	// create executor
+	executor = rclc_executor_get_zero_initialized_executor();
+	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+	RCCHECK(rclc_executor_add_timer(&executor, &timer));
+
+	// create publishers
+	create_publishers();
+
+	return RCL_RET_OK;
+}
+
+rcl_ret_t destroy_entities()
+{
+	rmw_shutdown(&rmw_context);
+	rmw_context = *rcl_context_get_rmw_context(&support.context);
+	(void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
+
+	destroy_publishers();
+	rcl_timer_fini(&timer);
+	rcl_node_fini(&node);
+	rcl_shutdown(&support.context);
+	rclc_executor_fini(&executor);
+	rclc_support_fini(&support);
+
+	return RCL_RET_OK;
 }
 
 esp_err_t get_micro_ros_agent_ip()
@@ -214,6 +211,11 @@ esp_err_t get_micro_ros_agent_ip()
 	return ESP_OK;
 }
 
+enum states get_uros_state()
+{
+	return state;
+}
+
 void micro_ros_task(void *arg)
 {
 	state = WAITING_AGENT;
@@ -229,9 +231,7 @@ void micro_ros_task(void *arg)
 		switch (state) {
 			case WAITING_AGENT:
 				EXECUTE_EVERY_N_MS(
-				  500,
-				  rmw_context_t rmw_context =
-					rmw_get_zero_initialized_context();
+				  500, rmw_context = rmw_get_zero_initialized_context();
 				  rmw_init(&rmw_options, &rmw_context);
 				  state = (RMW_RET_OK == rmw_uros_ping_agent(100, 5))
 							? AGENT_AVAILABLE

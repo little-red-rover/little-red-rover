@@ -288,7 +288,7 @@ void wifi_mgr_init()
 
 	wifi_config_t wifi_config = {
         .ap = {
-            .ssid = "little red rover",
+            .ssid = "little_red_rover",
             .ssid_len = 0,
             .channel = 0,
             .password = "",
