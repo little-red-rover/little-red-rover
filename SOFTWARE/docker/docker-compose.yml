@@ -40,6 +40,6 @@ services:
         image: nginx:alpine
         volumes:
             - ../little_red_rover_ws/src/little_red_rover/assets:/usr/share/nginx/html
-            - nginx.conf:/etc/nginx/nginx.conf
+            - ./nginx.conf:/etc/nginx/nginx.conf
         ports:
           - "8100:80"

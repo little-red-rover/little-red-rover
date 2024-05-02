@@ -1,6 +1,10 @@
 {
 	"documentId": "3c9bcb798eb55dc89c3300c0",
-    "outputFormat": "urdf",
+	"outputFormat": "urdf",
 	"assemblyName": "robot",
-	"mergeSTLs": "visual"
+	"mergeSTLs": "visual",
+	"packageName": "http://localhost:8100/rover/",
+	"addDummyBaseLink" : true,
+	"robotName" : "little red rover",
+	"postImportCommands": ["sed -i 's|package://||g' robot.urdf"]
 }
