@@ -8,7 +8,8 @@
             "extensions": [
                 "ms-python.debugpy",
                 "ms-python.python",
-                "ms-iot.vscode-ros"
+                "ms-iot.vscode-ros",
+                "ms-python.autopep8"
             ]
         }
     }

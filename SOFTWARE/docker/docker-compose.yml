@@ -10,7 +10,6 @@ services:
         volumes:
             - ../little_red_rover_ws/src:/little_red_rover_ws/src
             - ../little_red_rover_ws/tools:/tools
-            - ../assets:/assets
         ports:
             - "9002:9002" # gzweb
             - "9090:9090" # rosbridge
@@ -37,3 +36,10 @@ services:
         container_name: foxglove
         ports:
             - "8080:8080"
+    urdf_server:
+        image: nginx:alpine
+        volumes:
+            - ../little_red_rover_ws/src/little_red_rover/assets:/usr/share/nginx/html
+            - nginx.conf:/etc/nginx/nginx.conf
+        ports:
+          - "8100:80"
