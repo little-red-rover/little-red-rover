@@ -100,6 +100,9 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
 	clock_gettime(CLOCK_REALTIME, &ts);
 	scan_msg.header.stamp.sec = ts.tv_sec;
 	scan_msg.header.stamp.nanosec = ts.tv_nsec;
+	scan_msg.header.frame_id.data = "base_link";
+	scan_msg.header.frame_id.size = 9;
+	scan_msg.header.frame_id.capacity = 9;
 
 	scan_msg.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
 	scan_msg.angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
