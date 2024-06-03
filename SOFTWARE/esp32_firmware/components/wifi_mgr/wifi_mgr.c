@@ -11,6 +11,7 @@
 #include "esp_netif.h"
 #include "esp_spiffs.h"
 #include "esp_vfs_fat.h"
+#include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
@@ -19,7 +20,11 @@
 #include <wifi_provisioning/manager.h>
 #include <wifi_provisioning/scheme_softap.h>
 
+#include "dhcpserver/dhcpserver.h"
+#include "dhcpserver/dhcpserver_options.h"
+
 #include "lwip/err.h"
+#include "lwip/lwip_napt.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
@@ -28,7 +33,12 @@
 
 #include "wifi_mgr.h"
 
+#define DEFAULT_AP_IP "192.168.4.1"
+#define DEFAULT_DNS "8.8.8.8"
+
 static esp_ip4_addr_t STA_IP;
+esp_netif_t *esp_netif_sta;
+esp_netif_t *esp_netif_ap;
 
 static const char *TAG = "wifi_mgr";
 static void wifi_prov_event_handler(void *arg,
@@ -170,6 +180,12 @@ static void wifi_event_handler(void *arg,
 		STA_IP = event->ip_info.ip;
 		ESP_LOGI(TAG_STA, "Got IP:" IPSTR, IP2STR(&STA_IP));
 		s_retry_num = 0;
+		esp_netif_dns_info_t dns;
+		if (esp_netif_get_dns_info(esp_netif_sta, ESP_NETIF_DNS_MAIN, &dns) ==
+			ESP_OK) {
+			esp_netif_set_dns_info(esp_netif_ap, ESP_NETIF_DNS_MAIN, &dns);
+			ESP_LOGI(TAG, "set dns to:" IPSTR, IP2STR(&(dns.ip.u_addr.ip4)));
+		}
 		xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 	}
 }
@@ -303,15 +319,28 @@ void wifi_mgr_init()
 	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
 
 	ESP_LOGI("AP", "ESP_WIFI_MODE_AP");
-	esp_netif_t *esp_netif_ap = esp_netif_create_default_wifi_ap();
+	esp_netif_ap = esp_netif_create_default_wifi_ap();
 
 	ESP_LOGI("STA", "ESP_WIFI_MODE_STA");
-	esp_netif_t *esp_netif_sta = esp_netif_create_default_wifi_sta();
+	esp_netif_sta = esp_netif_create_default_wifi_sta();
 
 	ESP_ERROR_CHECK(start_webserver());
-	//    printf("webserver handle: %d \n", *(unsigned int
-	//    *)_server_handle);
-	// start_webserver();
+
+	// DHCP
+	esp_netif_dhcps_start(esp_netif_ap);
+	esp_netif_dhcps_start(esp_netif_sta);
+	esp_netif_dns_info_t dnsserver;
+	dhcps_offer_t dhcps_dns_value = OFFER_DNS;
+	esp_netif_dhcps_option(esp_netif_ap,
+						   ESP_NETIF_OP_SET,
+						   ESP_NETIF_DOMAIN_NAME_SERVER,
+						   &dhcps_dns_value,
+						   sizeof(dhcps_dns_value));
+
+	// // Set custom dns server address for dhcp server
+	dnsserver.ip.u_addr.ip4.addr = esp_ip4addr_aton(DEFAULT_DNS);
+	dnsserver.ip.type = ESP_IPADDR_TYPE_V4;
+	esp_netif_set_dns_info(esp_netif_ap, ESP_NETIF_DNS_MAIN, &dnsserver);
 
 	/* PROVISIONING INIT */
 	s_wifi_event_group = xEventGroupCreate();
@@ -325,9 +354,9 @@ void wifi_mgr_init()
 	ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 	wifi_prov_scheme_softap_set_httpd_handle((void *)(&_server));
 
+	// This will be tied to a button
 	// wifi_prov_mgr_reset_provisioning();
 
-	// This will be tied to a button
 	ESP_ERROR_CHECK(wifi_prov_mgr_disable_auto_stop(0));
 
 	/*  */
@@ -350,6 +379,8 @@ void wifi_mgr_init()
 
 		ESP_ERROR_CHECK(esp_wifi_start());
 	}
+
+	ip_napt_enable(esp_ip4addr_aton(DEFAULT_AP_IP), 1);
 
 	/* Wait for Wi-Fi connection */
 	xEventGroupWaitBits(

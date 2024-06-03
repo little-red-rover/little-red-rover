@@ -6,7 +6,8 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-vscode.cpptools-extension-pack"
+                "ms-vscode.cpptools-extension-pack",
+                "xaver.clang-format"
             ]
         }
     }

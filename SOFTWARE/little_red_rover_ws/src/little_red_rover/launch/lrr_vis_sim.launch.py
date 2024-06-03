@@ -98,7 +98,8 @@ def generate_launch_description():
             arguments=[urdf]),
     ]
 
-    return LaunchDescription(gazebo_launch + micro_ros_launch + visualization)
+    # return LaunchDescription(gazebo_launch + micro_ros_launch + visualization)
+    return LaunchDescription(micro_ros_launch + visualization)
 
     # ExecuteProcess(
     #     cmd=['ros2', 'param', 'set', '/gazebo',
