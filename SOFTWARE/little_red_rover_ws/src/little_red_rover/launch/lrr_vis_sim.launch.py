@@ -11,16 +11,7 @@ from pathlib import Path
 
 
 def generate_launch_description():
-    # CONNECT TO ROBOT
-    # Make sure connection is available to microROS.
-    # If not, prompt user to run connection utility
-    try:
-        robot_ip = Path(
-            '/little_red_rover_ws/src/robot_ip.txt').read_text().strip()
-    except:
-        print("Cannot read /little_red_rover_ws/src/robot_ip.txt.")
-        print("Please connect to the robot's wifi hotspot, then run 'lrr_connect' in your terminal.")
-        return
+    robot_ip = "192.168.4.1"
 
     # GAZEBO
     # Launch descriptions relating to gazebo.
@@ -35,9 +26,6 @@ def generate_launch_description():
             XMLLaunchDescriptionSource([os.path.join(
                 get_package_share_directory('rosbridge_server'), 'launch'), '/rosbridge_websocket_launch.xml']
             )
-        ),
-        ExecuteProcess(
-            cmd=['curl', '-s', '-X', 'GET', robot_ip + "/set-agent-ip"],
         ),
         ExecuteProcess(
             cmd=['gz', 'sim', '-r', '-s',

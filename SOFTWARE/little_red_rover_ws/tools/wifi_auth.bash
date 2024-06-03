@@ -7,8 +7,7 @@ while true; do
 			echo "Please connect your robot to wifi:"
 			python3 /tools/idf/esp_prov/esp_prov.py --transport softAP --sec_ver 1
 		else	
-			echo "Found robot at: $robot_ip. Writing to /little_red_rover_ws/src/robot_ip.txt"
-			echo "$robot_ip" > /little_red_rover_ws/src/robot_ip.txt
+			echo "Found robot at: $robot_ip. You are connected!"
 	  		break;
 		fi
 	else
