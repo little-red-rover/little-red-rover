@@ -166,6 +166,7 @@ static void wifi_event_handler(void *arg,
 		  (*(wifi_event_sta_disconnected_t *)event_data).reason;
 		if (reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT ||
 			reason == WIFI_REASON_NO_AP_FOUND ||
+			reason == WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY ||
 			reason == WIFI_REASON_HANDSHAKE_TIMEOUT ||
 			reason == WIFI_REASON_AUTH_EXPIRE ||
 			reason == WIFI_REASON_AUTH_FAIL) {
@@ -380,7 +381,9 @@ void wifi_mgr_init()
 		ESP_ERROR_CHECK(esp_wifi_start());
 	}
 
+	ESP_LOGI(TAG, "Wifi started successfully");
 	ip_napt_enable(esp_ip4addr_aton(DEFAULT_AP_IP), 1);
+	ESP_LOGI(TAG, "ip_napt enabled");
 
 	/* Wait for Wi-Fi connection */
 	xEventGroupWaitBits(

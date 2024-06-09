@@ -24,6 +24,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <uros_network_interfaces.h>
 
+#include "pub_sub_utils.h"
 #include "wifi_mgr.h"
 
 #define RCCHECK(fn)                                                            \
@@ -72,60 +73,35 @@ rmw_init_options_t rmw_options;
 rmw_context_t rmw_context;
 std_msgs__msg__Int32 msg;
 
-typedef struct
+esp_err_t get_micro_ros_agent_ip()
 {
-	rosidl_message_type_support_t *type_support;
-	char *topic_name;
-	rcl_publisher_t publisher;
-} publisher_info;
+	nvs_handle_t my_handle;
+	esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
+	if (err != ESP_OK) {
+		ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+	} else {
+		size_t l = sizeof(MICRO_ROS_AGENT_IP);
+		err = nvs_get_str(my_handle, "uros_ag_ip", MICRO_ROS_AGENT_IP, &l);
+		switch (err) {
+			case ESP_OK:
+				ESP_LOGI(TAG,
+						 "Retrieved IP (%s) for micro ros agent IP.",
+						 MICRO_ROS_AGENT_IP);
+				break;
+			case ESP_ERR_NVS_NOT_FOUND:
+				ESP_LOGI(TAG, "Agent IP has not been set.");
+				nvs_close(my_handle);
+				return ESP_FAIL;
+				break;
+			default:
+				ESP_LOGI(TAG, "Error (%s) reading!\n", esp_err_to_name(err));
+				nvs_close(my_handle);
+				return ESP_FAIL;
+		}
 
-publisher_info *publishers;
-size_t num_publishers = 0;
-
-void init_publisher_mem()
-{
-	publishers = (publisher_info *)malloc(sizeof(publisher_info));
-}
-
-rcl_publisher_t *register_publisher(
-  const rosidl_message_type_support_t *type_support,
-  const char *topic_name)
-{
-	if (num_publishers == 0)
-		init_publisher_mem();
-	else {
-		publishers = (publisher_info *)realloc(
-		  publishers, sizeof(publisher_info) * (num_publishers + 1));
+		nvs_close(my_handle);
 	}
-	publisher_info *cur_publisher = publishers + num_publishers;
-	cur_publisher->type_support = type_support;
-	cur_publisher->topic_name = topic_name;
-
-	num_publishers++;
-	return &(cur_publisher->publisher);
-}
-
-void create_publishers()
-{
-	for (uint16_t i = 0; i < num_publishers; i++) {
-		ESP_LOGI("create_publishers",
-				 "Creating publisher %s",
-				 ((publishers + i)->topic_name));
-		RCCHECK(rclc_publisher_init_best_effort(&((publishers + i)->publisher),
-												&node,
-												(publishers + i)->type_support,
-												(publishers + i)->topic_name));
-	}
-}
-
-void destroy_publishers()
-{
-	for (size_t i = 0; i < num_publishers; i++) {
-		ESP_LOGI("destroy_publishers",
-				 "Destroying publisher %s",
-				 ((publishers + i)->topic_name));
-		rcl_publisher_fini(&((publishers + i)->publisher), &node);
-	}
+	return ESP_OK;
 }
 
 void init_middleware()
@@ -158,8 +134,8 @@ rcl_ret_t create_entities()
 	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
 
-	// create publishers
-	create_publishers();
+	// create publishers / subscriptions
+	create_pub_sub(&node);
 
 	return RCL_RET_OK;
 }
@@ -170,7 +146,7 @@ rcl_ret_t destroy_entities()
 	rmw_context = *rcl_context_get_rmw_context(&support.context);
 	(void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
 
-	destroy_publishers();
+	destroy_pub_sub(&node);
 	rcl_timer_fini(&timer);
 	rcl_node_fini(&node);
 	rcl_shutdown(&support.context);
@@ -178,37 +154,6 @@ rcl_ret_t destroy_entities()
 	rclc_support_fini(&support);
 
 	return RCL_RET_OK;
-}
-
-esp_err_t get_micro_ros_agent_ip()
-{
-	nvs_handle_t my_handle;
-	esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
-	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-	} else {
-		size_t l = sizeof(MICRO_ROS_AGENT_IP);
-		err = nvs_get_str(my_handle, "uros_ag_ip", MICRO_ROS_AGENT_IP, &l);
-		switch (err) {
-			case ESP_OK:
-				ESP_LOGI(TAG,
-						 "Retrieved IP (%s) for micro ros agent IP.",
-						 MICRO_ROS_AGENT_IP);
-				break;
-			case ESP_ERR_NVS_NOT_FOUND:
-				ESP_LOGI(TAG, "Agent IP has not been set.");
-				nvs_close(my_handle);
-				return ESP_FAIL;
-				break;
-			default:
-				ESP_LOGI(TAG, "Error (%s) reading!\n", esp_err_to_name(err));
-				nvs_close(my_handle);
-				return ESP_FAIL;
-		}
-
-		nvs_close(my_handle);
-	}
-	return ESP_OK;
 }
 
 enum states get_uros_state()
@@ -238,6 +183,9 @@ void micro_ros_task(void *arg)
 							: WAITING_AGENT;
 				  if (state == WAITING_AGENT) {
 					  ESP_LOGI(TAG, "Agent unavailable, trying again.");
+					  get_micro_ros_agent_ip();
+					  RCCHECK(rmw_uros_options_set_udp_address(
+						MICRO_ROS_AGENT_IP, "8001", &rmw_options));
 				  } else { rmw_shutdown(&rmw_context); });
 				break;
 			case AGENT_AVAILABLE:
