@@ -96,10 +96,7 @@ static void drive_base_driver_task(void *arg)
 		vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
 	set_drive_base_enabled(true);
-	double ticker = 0;
 	while (1) {
-		ticker += 0.1;
-		set_diff_drive(cos(ticker), cos(ticker));
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
