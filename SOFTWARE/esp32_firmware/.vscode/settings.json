@@ -7,6 +7,11 @@
         "stdint.h": "c",
         "cstdlib": "c",
         "rmw_microros.h": "c",
-        "int32.h": "c"
+        "int32.h": "c",
+        "bdc_motor.h": "c",
+        "cmath": "c",
+        "random": "c",
+        "*.tcc": "c",
+        "bdc_motor_interface.h": "c"
     }
 }

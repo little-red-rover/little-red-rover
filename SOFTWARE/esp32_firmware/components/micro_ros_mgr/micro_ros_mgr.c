@@ -31,10 +31,11 @@
 	{                                                                          \
 		rcl_ret_t temp_rc = fn;                                                \
 		if ((temp_rc != RCL_RET_OK)) {                                         \
-			printf("Failed status on line %d: %d. Aborting.\n",                \
+			printf("Failed status on line %d: %d. Message: %s, Aborting.\n",   \
 				   __LINE__,                                                   \
-				   (int)temp_rc);                                              \
-			vTaskDelete(NULL);                                                 \
+				   (int)temp_rc,                                               \
+				   rcl_get_error_string().str);                                \
+			rcutils_reset_error();                                             \
 		}                                                                      \
 	}
 #define RCSOFTCHECK(fn)                                                        \
@@ -65,13 +66,11 @@ enum states state;
 
 rclc_support_t support;
 rcl_node_t node;
-rcl_timer_t timer;
 rclc_executor_t executor;
 rcl_allocator_t allocator;
 rcl_init_options_t init_options;
 rmw_init_options_t rmw_options;
 rmw_context_t rmw_context;
-std_msgs__msg__Int32 msg;
 
 esp_err_t get_micro_ros_agent_ip()
 {
@@ -127,15 +126,21 @@ rcl_ret_t create_entities()
 	}
 
 	// create node
+	node = rcl_get_zero_initialized_node();
 	RCCHECK(rclc_node_init_default(&node, "little_red_rover", "", &support));
+
+	// create publishers and subscriptions
+	create_pub_sub(&node);
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
-	RCCHECK(rclc_executor_add_timer(&executor, &timer));
+	ESP_LOGI(TAG, "Initing executor with %d handles", get_num_subscriptions());
+	if (get_num_subscriptions() > 0) {
+		RCCHECK(rclc_executor_init(
+		  &executor, &support.context, get_num_subscriptions(), &allocator));
+	}
 
-	// create publishers / subscriptions
-	create_pub_sub(&node);
+	create_sub_callbacks(&executor);
 
 	return RCL_RET_OK;
 }
@@ -147,7 +152,6 @@ rcl_ret_t destroy_entities()
 	(void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
 
 	destroy_pub_sub(&node);
-	rcl_timer_fini(&timer);
 	rcl_node_fini(&node);
 	rcl_shutdown(&support.context);
 	rclc_executor_fini(&executor);
@@ -161,15 +165,22 @@ enum states get_uros_state()
 	return state;
 }
 
+void add_subscription_callback(rcl_subscription_t *subscription,
+							   void *msg,
+							   rclc_subscription_callback_t callback)
+{
+	RCCHECK(rclc_executor_add_subscription(
+	  &executor, subscription, msg, callback, ON_NEW_DATA));
+}
+
 void micro_ros_task(void *arg)
 {
 	state = WAITING_AGENT;
 
-	msg.data = 0;
-
 	while (get_micro_ros_agent_ip() != ESP_OK) {
 		vTaskDelay(500 / portTICK_PERIOD_MS);
 	}
+
 	init_middleware();
 
 	while (true) {
@@ -204,7 +215,9 @@ void micro_ros_task(void *arg)
 									   : AGENT_DISCONNECTED;);
 
 				if (state == AGENT_CONNECTED) {
+					// RCCHECK(
 					rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+					//   );
 					usleep(10000);
 				}
 				break;

@@ -6,6 +6,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "pub_sub_utils.h"
 #include "sdkconfig.h"
 #include "sensor_msgs/msg/laser_scan.h"
 #include <stdio.h>
@@ -134,6 +135,10 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
 
 static void lidar_driver_task(void *arg)
 {
+	while (get_uros_state() != AGENT_CONNECTED) {
+		vTaskDelay(50 / portTICK_PERIOD_MS);
+	}
+
 	uart_config_t uart_config = {
 		.baud_rate = LIDAR_UART_BAUD_RATE,
 		.data_bits = UART_DATA_8_BITS,
@@ -188,12 +193,12 @@ static void lidar_driver_task(void *arg)
 	vTaskDelete(NULL);
 }
 
-void lidar_driver_init(rcl_publisher_t *pub)
+void lidar_driver_init()
 {
-	lidar_publisher = pub;
-	while (get_uros_state() != AGENT_CONNECTED) {
-		vTaskDelay(50 / portTICK_PERIOD_MS);
-	}
+	lidar_publisher = register_publisher(
+	  ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+	  "lrr_lidar_scan");
+
 	xTaskCreate(lidar_driver_task,
 				"lidar_driver_task",
 				LIDAR_TASK_STACK_SIZE,

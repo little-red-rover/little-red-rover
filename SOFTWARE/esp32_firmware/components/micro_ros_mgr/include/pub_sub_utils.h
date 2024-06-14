@@ -20,20 +20,25 @@ typedef struct
 	rosidl_message_type_support_t *type_support;
 	char *topic_name;
 	rcl_subscription_t subscription;
+	void *msg;
+	rclc_subscription_callback_t callback;
+
 } subscription_info;
 
-void init_publisher_mem();
-
-void init_subscriptions_mem();
+size_t get_num_subscriptions();
 
 rcl_publisher_t *register_publisher(
   const rosidl_message_type_support_t *type_support,
   const char *topic_name);
 
-rcl_publisher_t *register_subscription(
+rcl_subscription_t *register_subscription(
   const rosidl_message_type_support_t *type_support,
-  const char *topic_name);
+  const char *topic_name,
+  void *msg,
+  rclc_subscription_callback_t callback);
 
 void create_pub_sub(const rcl_node_t *node);
+
+void create_sub_callbacks(rclc_executor_t *executor);
 
 void destroy_pub_sub(const rcl_node_t *node);

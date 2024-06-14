@@ -26,7 +26,7 @@ def generate_launch_description():
             XMLLaunchDescriptionSource([os.path.join(
                 get_package_share_directory('rosbridge_server'), 'launch'), '/rosbridge_websocket_launch.xml']
             )
-        ),
+        ), 
         ExecuteProcess(
             cmd=['gz', 'sim', '-r', '-s',
                  '--headless-rendering', '-v', '4', 'shapes.sdf'],
