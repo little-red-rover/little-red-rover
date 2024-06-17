@@ -1,0 +1,28 @@
+{
+    "name": "micro_ros_esp_idf",
+    "service": "micro_ros_esp_idf",
+    "dockerComposeFile": "../docker/docker-compose.yml",
+    "workspaceFolder": "/esp32_firmware/",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "xaver.clang-format"
+            ]
+        }
+    },
+	"features": {	
+		"ghcr.io/duduribeiro/devcontainer-features/neovim:1": {
+            "version": "stable"
+        },
+		"ghcr.io/duduribeiro/devcontainer-features/tmux:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/node:1": {}
+	},
+	"mounts": [
+		"source=${localEnv:HOME}/.config,target=/root/.config",	
+		"source=${localEnv:HOME}/.tmux.conf,target=/root/.tmux.conf",
+		"source=${localEnv:HOME}/.tmux,target=/root/.tmux"
+	]
+}

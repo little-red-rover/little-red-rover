@@ -3,21 +3,16 @@
 #include "LSM6DS3_imu_driver.h"
 #include <stdio.h>
 
-#include "driver/gpio.h"
 #include "driver/i2c_master.h"
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
-#include "sdkconfig.h"
 #include "sensor_msgs/msg/imu.h"
 #include <stdio.h>
 #include <time.h>
 
 #include "micro_ros_mgr.h"
 #include <rcl/rcl.h>
-
-#include <math.h>
 
 #define IMU_TASK_STACK_SIZE (2048)
 
@@ -57,7 +52,7 @@ void LSM6DS3_imu_driver_init()
 	ESP_ERROR_CHECK(
 	  i2c_master_bus_add_device(bus_handle, &imu_i2c_conf, &imu_i2c_handle));
 
-	i2c_master_transmit_receive();
+	// i2c_master_transmit_receive();
 
 	imu_publisher = register_publisher(
 	  ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, imu), "lrr_imu");

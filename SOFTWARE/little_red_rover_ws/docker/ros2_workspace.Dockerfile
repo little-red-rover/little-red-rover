@@ -32,7 +32,7 @@ RUN source /ros2_setup.bash && \
 
 # Setup ROS workspace
 RUN mkdir -p /little_red_rover_ws/src
-COPY /little_red_rover_ws/src /little_red_rover_ws/src
+COPY ../src /little_red_rover_ws/src
 
 WORKDIR /little_red_rover_ws
 

@@ -1,0 +1,30 @@
+{
+    "name": "ros2_workspace",
+    "service": "workspace",
+    "dockerComposeFile": "../docker/docker-compose.yml",
+    "workspaceFolder": "/little_red_rover_ws/src",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.debugpy",
+                "ms-python.python",
+                "ms-iot.vscode-ros",
+                "ms-python.autopep8"
+            ]
+        }
+    },
+    "features": {	
+		"ghcr.io/duduribeiro/devcontainer-features/neovim:1": {
+            "version": "stable"
+        },
+		"ghcr.io/duduribeiro/devcontainer-features/tmux:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/node:1": {}
+	},
+	"mounts": [
+		"source=${localEnv:HOME}/.config,target=/root/.config",	
+		"source=${localEnv:HOME}/.tmux.conf,target=/root/.tmux.conf",
+		"source=${localEnv:HOME}/.tmux,target=/root/.tmux"
+	]
+}

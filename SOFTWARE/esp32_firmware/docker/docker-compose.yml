@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+    micro_ros_esp_idf:
+        image: micro_ros_esp_idf
+        tty: true # Prevent immediate exit when running with dev containers
+        build:
+            context: ..
+            dockerfile: docker/micro_ros_esp_idf.Dockerfile
+        privileged: true # Required to flash esp (sorry windows and mac folks)
+        volumes:
+            - ..:/esp32_firmware
+            - /dev:/dev
