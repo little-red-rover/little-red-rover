@@ -1,0 +1,118 @@
+{
+  "configById": {
+    "3D!18i6zy7": {
+      "layers": {
+        "845139cb-26bc-40b3-8161-8ab60af4baf5": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "845139cb-26bc-40b3-8161-8ab60af4baf5",
+          "layerId": "foxglove.Grid",
+          "size": 10,
+          "lineWidth": 1,
+          "color": "#248eff21",
+          "position": [
+            0,
+            0,
+            -0.042
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1,
+          "divisions": 100
+        },
+        "ef7656ae-76f2-4663-b67d-2fa7c2f5bd4c": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "URDF",
+          "instanceId": "ef7656ae-76f2-4663-b67d-2fa7c2f5bd4c",
+          "layerId": "foxglove.Urdf",
+          "sourceType": "url",
+          "url": "http://localhost:8100/rover/robot.urdf",
+          "filePath": "",
+          "parameter": "",
+          "topic": "",
+          "framePrefix": "",
+          "displayMode": "auto",
+          "fallbackColor": "#ffffff",
+          "order": 2
+        }
+      },
+      "cameraState": {
+        "perspective": true,
+        "distance": 9.753499582276762,
+        "phi": 41.03330447241513,
+        "thetaOffset": -12.05533352876917,
+        "targetOffset": [
+          -0.32016947174760624,
+          -1.4599393941730316,
+          3.5680088806480965e-17
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {
+        "labelScaleFactor": 1,
+        "meshUpAxis": "z_up"
+      },
+      "transforms": {
+        "frame:base_link": {
+          "visible": false
+        },
+        "frame:robot_body": {
+          "visible": false
+        },
+        "frame:wheel": {
+          "visible": false
+        },
+        "frame:wheel_2": {
+          "visible": false
+        }
+      },
+      "topics": {
+        "/lrr_lidar_scan": {
+          "visible": true,
+          "colorField": "range",
+          "colorMode": "colormap",
+          "colorMap": "turbo",
+          "decayTime": 0.5,
+          "minValue": 0,
+          "maxValue": 5,
+          "pointSize": 3
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {}
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": "3D!18i6zy7"
+}

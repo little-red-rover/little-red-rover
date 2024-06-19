@@ -1,17 +1,12 @@
 #include <rcl/types.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
-#include "esp_log.h"
-#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "wifi_mgr.h"
 
 #include "micro_ros_mgr.h"
-#include "pub_sub_utils.h"
 
 #include "drive_base_driver.h"
 #include "lidar_driver.h"

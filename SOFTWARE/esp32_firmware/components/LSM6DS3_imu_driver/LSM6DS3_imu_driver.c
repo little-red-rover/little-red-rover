@@ -1,6 +1,8 @@
 // https://content.arduino.cc/assets/st_imu_lsm6ds3_datasheet.pdf
 
 #include "LSM6DS3_imu_driver.h"
+#include "i2c_helpers.h"
+
 #include <stdio.h>
 
 #include "driver/i2c_master.h"
