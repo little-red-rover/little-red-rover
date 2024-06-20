@@ -11,7 +11,7 @@
 
 #define I2C_NUM I2C_NUM_0
 
-bool writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data, void *wireObj)
+bool writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data)
 {
 	i2c_cmd_handle_t cmd;
 
@@ -86,8 +86,7 @@ void SelectRegister(uint8_t dev, uint8_t reg)
 int8_t readBytes(uint8_t devAddr,
 				 uint8_t regAddr,
 				 uint8_t length,
-				 uint8_t *data,
-				 uint16_t timeout)
+				 uint8_t *data)
 {
 	i2c_cmd_handle_t cmd;
 	SelectRegister(devAddr, regAddr);
@@ -119,10 +118,7 @@ int8_t readBytes(uint8_t devAddr,
  * to use default class value in I2Cdev::readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t readByte(uint8_t devAddr,
-				uint8_t regAddr,
-				uint8_t *data,
-				uint16_t timeout)
+int8_t readByte(uint8_t devAddr, uint8_t regAddr, uint8_t *data)
 {
-	return readBytes(devAddr, regAddr, 1, data, timeout);
+	return readBytes(devAddr, regAddr, 1, data);
 }

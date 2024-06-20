@@ -1,11 +1,12 @@
 // https://content.arduino.cc/assets/st_imu_lsm6ds3_datasheet.pdf
 
 #include "LSM6DS3_imu_driver.h"
-#include "i2c_helpers.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include "driver/i2c_master.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
@@ -21,8 +22,42 @@
 #define SCL_PIN 2
 #define SDA_PIN 3
 
+static const char *TAG = "imu driver";
+static const uint8_t DEV_ADDR = 0x6A;
+static const uint8_t DEV_WRITE_ADDR = (DEV_ADDR << 1) | 1;
+static const uint8_t DEV_READ_ADDR = (DEV_ADDR << 1) | 0;
+
 rcl_publisher_t *imu_publisher;
 i2c_master_dev_handle_t imu_i2c_handle;
+
+void readRegisters(uint8_t address, uint8_t *data, size_t length)
+{
+	i2c_master_transmit_receive(
+	  imu_i2c_handle, &DEV_READ_ADDR, 1, data, length, -1);
+}
+
+uint8_t readRegister(uint8_t address)
+{
+	uint8_t read;
+	i2c_master_transmit_receive(
+	  imu_i2c_handle, &DEV_READ_ADDR, 1, &read, 1, -1);
+	return read;
+}
+
+void writeRegister(uint8_t address, uint8_t value)
+{
+	uint8_t buff[] = { DEV_WRITE_ADDR, address, value };
+
+	i2c_master_transmit(imu_i2c_handle, buff, 3, -1);
+}
+
+void writeRegisters(uint8_t address, uint8_t *values, size_t length)
+{
+	uint8_t buff[] = { DEV_WRITE_ADDR, address };
+
+	i2c_master_transmit(imu_i2c_handle, buff, 2, -1);
+	i2c_master_transmit(imu_i2c_handle, values, length, -1);
+}
 
 static void imu_driver_task(void *arg)
 {
@@ -39,7 +74,7 @@ void LSM6DS3_imu_driver_init()
 {
 	i2c_master_bus_config_t i2c_bus_config = {
 		.clk_source = I2C_CLK_SRC_DEFAULT,
-		.i2c_port = -1,
+		.i2c_port = I2C_NUM_0,
 		.scl_io_num = SCL_PIN,
 		.sda_io_num = SDA_PIN,
 		.glitch_ignore_cnt = 7,
@@ -56,8 +91,13 @@ void LSM6DS3_imu_driver_init()
 
 	// i2c_master_transmit_receive();
 
-	imu_publisher = register_publisher(
-	  ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, imu), "lrr_imu");
+	// imu_publisher = register_publisher(
+	//   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, imu), "lrr_imu");
+	uint8_t write_addr = (0x6A << 1) | 1;
+	uint8_t read;
+	i2c_master_transmit_receive(imu_i2c_handle, &write_addr, 1, &read, 1, -1);
+
+	ESP_LOGI(TAG, "IMU WHO_AM_I: %d", (int)readRegister(LSM6DS3_WHO_AM_I_REG));
 
 	xTaskCreate(
 	  imu_driver_task, "imu_driver_task", IMU_TASK_STACK_SIZE, NULL, 10, NULL);
