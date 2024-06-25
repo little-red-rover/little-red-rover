@@ -1,4 +1,4 @@
-# Little Red Rover
+# Little Red Docs
 
 *WIP: Details on this page refer to planned capabilities, not the current status of the project. Think of this as a roadmap.* 
 

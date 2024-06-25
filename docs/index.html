@@ -10,8 +10,27 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-defaults.css">
 
 	<style>
+		@font-face {
+			font-family: 'Randomn4yy';
+			src: url('./_fonts/Randomn4yy-Regular.ttf');
+		}
+
+		.cover-main {
+			font-family: 'Randomn4yy', monospace;
+		}
+
+		.cover-main h1 {
+			font-size: 3em;
+			color: black;
+		}
+
+		.cover-main p {
+			font-size: 1.5em;
+		}
+
 		:root {
-			--sidebar-name-font-family: monospace;
+			--sidebar-name-font-family: 'Randomn4yy', monospace;
+			--sidebar-name-font-size: 2.5em;
 		}
 	</style>
 </head>
@@ -20,7 +39,7 @@
 	<div id="app"></div>
 	<script>
 		window.$docsify = {
-			name: 'Little Red Rover',
+			name: 'Little Red Docs',
 			coverpage: true
 		}
 	</script>
