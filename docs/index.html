@@ -19,18 +19,43 @@
 			font-family: 'Randomn4yy', monospace;
 		}
 
-		.cover-main h1 {
-			font-size: 3em;
-			color: black;
-		}
-
 		.cover-main p {
 			font-size: 1.5em;
 		}
 
 		:root {
+			--base-background-color: #080808;
+
+			--theme-lightness: 100%;
+
+			/* Monochrome shades (darker) and tints (lighter) */
+			--mono-tint3: hsl(var(--mono-hue), var(--mono-saturation), 20%);
+			--mono-tint2: hsl(var(--mono-hue), var(--mono-saturation), 30%);
+			--mono-tint1: hsl(var(--mono-hue), var(--mono-saturation), 40%);
+			--mono-base: hsl(var(--mono-hue), var(--mono-saturation), 50%);
+			--mono-shade1: hsl(var(--mono-hue), var(--mono-saturation), 70%);
+			--mono-shade2: hsl(var(--mono-hue), var(--mono-saturation), 89%);
+			--mono-shade3: hsl(var(--mono-hue), var(--mono-saturation), 97%);
+
 			--sidebar-name-font-family: 'Randomn4yy', monospace;
 			--sidebar-name-font-size: 2.5em;
+			--sidebar-nav-link-border-color: transparent;
+			--sidebar-nav-link-border-color--active: var(--theme-color);
+			--sidebar-nav-link-border-width: 0 4px 0 0;
+			--sidebar-nav-link-color--active: var(--theme-color);
+			--sidebar-nav-link-margin: 0 -25px 0 0;
+			--sidebar-nav-link-text-decoration: none;
+			--sidebar-nav-link-text-decoration--active: none;
+			--sidebar-nav-link-text-decoration--hover: underline;
+
+			--heading-font-family: 'Randomn4yy', monospace;
+			--heading-h1-font-size: var(--font-size-xxxl);
+			--heading-h2-font-size: var(--font-size-xxl);
+			--heading-h3-font-size: var(--font-size-xl);
+			--heading-h4-font-size: var(--font-size-m);
+			--heading-h5-font-size: var(--font-size-s);
+			--heading-h6-font-size: var(--font-size-xs);
+			--heading-margin: 2.5rem -0.1em -0.25em;
 		}
 	</style>
 </head>
@@ -40,7 +65,22 @@
 	<script>
 		window.$docsify = {
 			name: 'Little Red Docs',
-			coverpage: true
+			plugins: [
+				function add_padding(hook, vm) {
+					var header = ['<br>'].join('');
+					var footer = [
+						'<hr/>',
+						'<br>',
+					].join('');
+					hook.afterEach(function (html) {
+						return (
+							header +
+							html +
+							footer
+						);
+					});
+				},
+			],
 		}
 	</script>
 	<!-- Docsify v4 -->
