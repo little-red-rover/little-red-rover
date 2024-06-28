@@ -6,6 +6,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "hal/gpio_types.h"
 #include "pub_sub_utils.h"
 #include "sdkconfig.h"
 #include <geometry_msgs/msg/twist.h>
@@ -31,6 +32,9 @@
 #define RIGHT_MOTOR_PWM_A_CHANNEL 2
 #define RIGHT_MOTOR_PWM_B_PIN 10
 #define RIGHT_MOTOR_PWM_B_CHANNEL 3
+
+#define LEFT_ENCODER_PIN 5
+#define RIGHT_ENCODER_PIN 4
 
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
 #define PWM_FREQ_HZ 4000
@@ -93,6 +97,10 @@ static void set_diff_drive(double left, double right)
 static void drive_base_driver_task(void *arg)
 {
 	while (get_uros_state() != AGENT_CONNECTED) {
+		ESP_LOGI(TAG,
+				 "Left encoder: %d, | Right encoder: %d",
+				 gpio_get_level(LEFT_ENCODER_PIN),
+				 gpio_get_level(RIGHT_ENCODER_PIN));
 		vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
 	set_drive_base_enabled(true);
@@ -135,6 +143,12 @@ void drive_base_driver_init()
 
 	right_motor_handle.chan_a = RIGHT_MOTOR_PWM_A_CHANNEL;
 	right_motor_handle.chan_b = RIGHT_MOTOR_PWM_B_CHANNEL;
+
+	gpio_set_direction(LEFT_ENCODER_PIN, GPIO_MODE_INPUT);
+	gpio_set_direction(RIGHT_ENCODER_PIN, GPIO_MODE_INPUT);
+
+	gpio_pullup_en(LEFT_ENCODER_PIN);
+	gpio_pullup_en(RIGHT_ENCODER_PIN);
 
 	// geometry_msgs__msg__Twist__init(&cmd_vel_msg);
 
