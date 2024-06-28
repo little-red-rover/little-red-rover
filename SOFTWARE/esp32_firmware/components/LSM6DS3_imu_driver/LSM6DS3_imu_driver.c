@@ -23,40 +23,36 @@
 #define SDA_PIN 3
 
 static const char *TAG = "imu driver";
-static const uint8_t DEV_ADDR = 0x6A;
-static const uint8_t DEV_WRITE_ADDR = (DEV_ADDR << 1) | 1;
-static const uint8_t DEV_READ_ADDR = (DEV_ADDR << 1) | 0;
 
 rcl_publisher_t *imu_publisher;
 i2c_master_dev_handle_t imu_i2c_handle;
 
 void readRegisters(uint8_t address, uint8_t *data, size_t length)
 {
-	i2c_master_transmit_receive(
-	  imu_i2c_handle, &DEV_READ_ADDR, 1, data, length, -1);
+	ESP_ERROR_CHECK(i2c_master_transmit_receive(
+	  imu_i2c_handle, &address, 1, data, length, -1));
 }
 
 uint8_t readRegister(uint8_t address)
 {
 	uint8_t read;
-	i2c_master_transmit_receive(
-	  imu_i2c_handle, &DEV_READ_ADDR, 1, &read, 1, -1);
+	readRegisters(address, &read, 1);
 	return read;
 }
 
 void writeRegister(uint8_t address, uint8_t value)
 {
-	uint8_t buff[] = { DEV_WRITE_ADDR, address, value };
+	uint8_t buff[] = { address, value };
 
-	i2c_master_transmit(imu_i2c_handle, buff, 3, -1);
+	ESP_ERROR_CHECK(i2c_master_transmit(imu_i2c_handle, buff, 2, -1));
 }
 
 void writeRegisters(uint8_t address, uint8_t *values, size_t length)
 {
-	uint8_t buff[] = { DEV_WRITE_ADDR, address };
+	uint8_t buff[] = { address };
 
-	i2c_master_transmit(imu_i2c_handle, buff, 2, -1);
-	i2c_master_transmit(imu_i2c_handle, values, length, -1);
+	ESP_ERROR_CHECK(i2c_master_transmit(imu_i2c_handle, buff, 2, -1));
+	ESP_ERROR_CHECK(i2c_master_transmit(imu_i2c_handle, values, length, -1));
 }
 
 static void imu_driver_task(void *arg)
@@ -84,7 +80,7 @@ void LSM6DS3_imu_driver_init()
 	ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_config, &bus_handle));
 
 	i2c_device_config_t imu_i2c_conf = { .scl_speed_hz = 400000,
-										 .device_address = 0b1101011 };
+										 .device_address = LSM6DS3_ADDRESS };
 
 	ESP_ERROR_CHECK(
 	  i2c_master_bus_add_device(bus_handle, &imu_i2c_conf, &imu_i2c_handle));
@@ -93,9 +89,10 @@ void LSM6DS3_imu_driver_init()
 
 	// imu_publisher = register_publisher(
 	//   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, imu), "lrr_imu");
-	uint8_t write_addr = (0x6A << 1) | 1;
-	uint8_t read;
-	i2c_master_transmit_receive(imu_i2c_handle, &write_addr, 1, &read, 1, -1);
+	// uint8_t write_addr = (0x6A << 1) | 1;
+	// uint8_t read;
+	// i2c_master_transmit_receive(
+	//   imu_i2c_handle, &DEV_READ_ADDR, 1, &read, 1, -1);
 
 	ESP_LOGI(TAG, "IMU WHO_AM_I: %d", (int)readRegister(LSM6DS3_WHO_AM_I_REG));
 

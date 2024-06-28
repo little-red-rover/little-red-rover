@@ -1,6 +1,6 @@
 #pragma once
 
-#define LSM6DS3_ADDRESS 0x6A
+#define LSM6DS3_ADDRESS 0b1101011
 
 #define LSM6DS3_WHO_AM_I_REG 0X0F
 #define LSM6DS3_CTRL1_XL 0X10
