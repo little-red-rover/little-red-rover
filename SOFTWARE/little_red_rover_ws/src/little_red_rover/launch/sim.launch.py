@@ -1,0 +1,53 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch.actions import IncludeLaunchDescription
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
+
+
+def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    gazebo_launch = [
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'),
+        IncludeLaunchDescription(
+            XMLLaunchDescriptionSource([os.path.join(
+                get_package_share_directory('rosbridge_server'), 'launch'), '/rosbridge_websocket_launch.xml']
+            )
+        ), 
+        ExecuteProcess(
+            cmd=['gz', 'sim', '-r', '-s',
+                 '--headless-rendering', '-v', '4', 'shapes.sdf'],
+        ),
+        ExecuteProcess(
+            cmd=['gz', 'launch', '-v', '4', '/websocket.gzlaunch']
+        ),
+        ExecuteProcess(
+            cmd=['ros2', 'param', 'set', '/gazebo',
+                 'use_sim_time', use_sim_time]
+        ),
+        # Node(
+        #     package='ros_gz_bridge',
+        #     executable='parameter_bridge',
+        #     arguments=[
+        #         '/model/vehicle_blue/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'],
+        # ),
+        # Node(
+        #     package='ros_gz_bridge',
+        #     executable='parameter_bridge',
+        #     arguments=['/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'],
+        # ),
+        # Node(
+        #     package='ros_gz_bridge',
+        #     executable='parameter_bridge',
+        #     arguments=['/lidar2@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'],
+        # ),
+    ]
+
+    return LaunchDescription(gazebo_launch)
+
