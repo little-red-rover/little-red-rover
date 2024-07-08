@@ -9,12 +9,13 @@ from launch.actions import IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 
 def generate_launch_description():
-    run_sim = LaunchConfiguration("run_sim")
+    run_sim = LaunchConfiguration("sim")
     
     config = [
         DeclareLaunchArgument(
-            'run_sim',
-            default_value='False'
+            'sim',
+            default_value='False',
+            description='Run a simulation'
         )
     ]
 

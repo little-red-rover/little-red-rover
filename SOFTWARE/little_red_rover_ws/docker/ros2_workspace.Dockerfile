@@ -3,25 +3,29 @@ SHELL ["/bin/bash", "-c"]
 
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /ros2_setup.bash
 
+### tooling
 RUN apt-get update && \
-apt-get install -y --no-install-recommends wget curl ros-${ROS_DISTRO}-rosbridge-server clang-format
+apt-get install -y --no-install-recommends python3 python3-pip wget
 
-# gazebo setup
+RUN pip3 install protobuf cryptography pathlib
+
+### gazebo setup
 RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null && \
 apt-get update && \
-apt-get install -y --no-install-recommends gz-garden ros-$ROS_DISTRO-ros-gzgarden python3 python3-pip iputils-ping
+apt-get install -y --no-install-recommends ros-$ROS_DISTRO-ros-gz
 
-RUN curl -O https://raw.githubusercontent.com/gazebosim/gz-launch/main/examples/websocket.gzlaunch
+# By default gazebo calculates lidar data using the GPU, but GPU operations aren't possible cross platform in Docker.
+# Setting this ENV variable causes it to be calculated on the CPU, but slower.
+# https://github.com/gazebosim/gz-sensors/issues/26
+RUN echo "export LIBGL_ALWAYS_SOFTWARE=true" >> /ros2_setup.bash
 
-# micro ros setup
+### micro ros setup
 WORKDIR "/micro_ros_ws"
 RUN git clone --depth=1 -b $ROS_DISTRO --single-branch --shallow-submodules https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
 
 RUN apt update && \
 	rosdep update && \ 
-	rosdep install --from-paths src --ignore-src -y && \
-	apt-get install -y --no-install-recommends python3-pip
+	rosdep install --from-paths src --ignore-src -y
 
 RUN source /ros2_setup.bash && colcon build
 RUN echo "source /micro_ros_ws/install/local_setup.bash" >> /ros2_setup.bash
@@ -30,7 +34,7 @@ RUN source /ros2_setup.bash && \
 	ros2 run micro_ros_setup create_agent_ws.sh && \
 	ros2 run micro_ros_setup build_agent.sh
 
-# Setup ROS workspace
+### Setup ROS workspace
 RUN mkdir -p /little_red_rover_ws/src
 COPY ../src /little_red_rover_ws/src
 
@@ -40,16 +44,13 @@ RUN apt update && \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y 
 
-RUN pip3 install protobuf cryptography pathlib
+### Dev env setup
+RUN apt-get update && \
+apt-get install -y --no-install-recommends black iputils-ping python3-venv && \
+pip3 install black
 
 RUN source /ros2_setup.bash && colcon build
 RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
-
-# By default gazebo calculates Lidar data using the GPU.
-# Setting this ENV variable causes it to be calculated on the CPU, but slower.
-# Can be solved per computer by linking the GPU through docker-compose.yml
-# https://github.com/gazebosim/gz-sensors/issues/26
-RUN echo "export LIBGL_ALWAYS_SOFTWARE=true" >> /ros2_setup.bash
 
 RUN echo "alias lrr_build='(cd /little_red_rover_ws && colcon build --symlink-install)'" >> /root/.bashrc
 RUN echo "alias lrr_run='ros2 launch little_red_rover lrr.launch.py'" >> /root/.bashrc
