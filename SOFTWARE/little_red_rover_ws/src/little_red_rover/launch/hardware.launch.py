@@ -11,12 +11,12 @@ def generate_launch_description():
     # Then launch the microROS agent, which relays messages sent from uROS.
     micro_ros_launch = [
         ExecuteProcess(
-            cmd=['curl', '-s', '-X', 'GET', robot_ip + "/set-agent-ip"],
+            cmd=["curl", "-s", "-X", "GET", robot_ip + "/set-agent-ip"],
         ),
         Node(
-            package='micro_ros_agent',
-            executable='micro_ros_agent',
-            arguments=['udp4', '--port', '8001', '--ip', robot_ip],
+            package="micro_ros_agent",
+            executable="micro_ros_agent",
+            arguments=["udp4", "--port", "8001", "--ip", robot_ip],
         ),
     ]
 
