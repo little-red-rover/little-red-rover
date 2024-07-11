@@ -21,13 +21,10 @@ void app_main(void)
 {
 
 	drive_base_driver_init();
-	printf("Drive base init complete");
 
 	LSM6DS3_imu_driver_init();
-	printf("IMU init complete");
 
 	lidar_driver_init();
-	printf("Lidar init complete");
 
 	wifi_mgr_init();
 

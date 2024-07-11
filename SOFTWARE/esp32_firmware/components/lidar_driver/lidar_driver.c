@@ -168,7 +168,6 @@ static void lidar_driver_task(void *arg)
 			start_chars[1] = start_chars[0];
 			continue;
 		}
-		ESP_LOGI(TAG, "Got packet start");
 		scan_data.header = HEADER;
 		scan_data.ver_len = VERLEN;
 

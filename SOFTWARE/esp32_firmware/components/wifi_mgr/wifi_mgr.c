@@ -14,6 +14,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "nvs_flash.h"
+#include "portmacro.h"
 #include "sdkconfig.h"
 
 #include <esp_wifi.h>
@@ -380,6 +381,8 @@ void wifi_mgr_init()
 
 		ESP_ERROR_CHECK(esp_wifi_start());
 	}
+
+	vTaskDelay(100 / portTICK_PERIOD_MS);
 
 	ESP_LOGI(TAG, "Wifi started successfully");
 	ip_napt_enable(esp_ip4addr_aton(DEFAULT_AP_IP), 1);
