@@ -120,15 +120,6 @@ void create_sub_callbacks(rclc_executor_t *executor)
 		ESP_LOGI("create_sub_callbacks",
 				 "Creating callback for subscriber %s",
 				 ((subscriptions + i)->topic_name));
-		// ESP_LOGI("ERM",
-		// 		 "Subscription addr: %d, should be %d\nMsg addr: %d, should "
-		// 		 "be: %d\nCallback adr:%d, should be:%d",
-		// 		 (int)(&((subscriptions + i)->subscription)),
-		// 		 (int)cmd_vel_subscription,
-		// 		 (int)((subscriptions + i)->msg),
-		// 		 (int)(&cmd_vel_msg),
-		// 		 (int)((subscriptions + i)->callback),
-		// 		 (int)(&cmd_vel_callback));
 
 		RCCHECK(
 		  rclc_executor_add_subscription(executor,
@@ -136,17 +127,6 @@ void create_sub_callbacks(rclc_executor_t *executor)
 										 ((subscriptions + i)->msg),
 										 (subscriptions + i)->callback,
 										 ON_NEW_DATA));
-
-		(subscriptions + i)->callback(NULL);
-
-		ESP_LOGI("eguuuughhh", "hit");
-
-		// RCCHECK(
-		//   rclc_executor_add_subscription(executor,
-		// 								 &((subscriptions + i)->subscription),
-		// 								 &cmd_vel_msg,
-		// 								 &cmd_vel_callback,
-		// 								 ON_NEW_DATA));
 	}
 }
 

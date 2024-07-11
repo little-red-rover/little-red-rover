@@ -382,6 +382,8 @@ void wifi_mgr_init()
 		ESP_ERROR_CHECK(esp_wifi_start());
 	}
 
+	// Load bearing delay
+	// This prevents the esp32s3 from boot looping (for some reason)
 	vTaskDelay(100 / portTICK_PERIOD_MS);
 
 	ESP_LOGI(TAG, "Wifi started successfully");

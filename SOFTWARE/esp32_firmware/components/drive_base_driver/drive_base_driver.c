@@ -8,15 +8,14 @@
 #include "freertos/task.h"
 #include "hal/gpio_types.h"
 #include "pub_sub_utils.h"
-#include "sdkconfig.h"
+#include <geometry_msgs/msg/detail/twist__functions.h>
+#include <geometry_msgs/msg/detail/twist__struct.h>
 #include <geometry_msgs/msg/twist.h>
 #include <stdio.h>
 #include <time.h>
 
 #include "drive_base_driver.h"
-#include "math.h"
 #include "micro_ros_mgr.h"
-#include "sensor_msgs/msg/laser_scan.h"
 #include <rcl/rcl.h>
 #include <rclc/executor_handle.h>
 
@@ -41,8 +40,7 @@
 
 static const char *TAG = "drive_base_driver";
 
-// geometry_msgs__msg__Twist cmd_vel_msg;
-sensor_msgs__msg__LaserScan cmd_vel_msg;
+geometry_msgs__msg__Twist *cmd_vel_msg;
 
 rcl_subscription_t *cmd_vel_subscription;
 
@@ -57,7 +55,10 @@ motor_handle_t right_motor_handle;
 
 void cmd_vel_callback(const void *msgin)
 {
-	ESP_LOGI(TAG, "Hit!");
+	const geometry_msgs__msg__Twist *msg =
+	  (const geometry_msgs__msg__Twist *)msgin;
+	ESP_LOGI(
+	  TAG, "Front back: %f | Left right: %f", msg->linear.x, msg->angular.z);
 }
 
 static void set_drive_base_enabled(bool enable)
@@ -146,13 +147,13 @@ void drive_base_driver_init()
 	gpio_pullup_en(LEFT_ENCODER_PIN);
 	gpio_pullup_en(RIGHT_ENCODER_PIN);
 
-	// geometry_msgs__msg__Twist__init(&cmd_vel_msg);
+	cmd_vel_msg = geometry_msgs__msg__Twist__create();
 
-	// cmd_vel_subscription = register_subscription(
-	//   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
-	//   "lrr_lidar_scan",
-	//   &cmd_vel_msg,
-	//   &cmd_vel_callback);
+	cmd_vel_subscription = register_subscription(
+	  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+	  "lrr_teleop",
+	  cmd_vel_msg,
+	  &cmd_vel_callback);
 
 	xTaskCreate(drive_base_driver_task,
 				"drive_base_driver_task",
