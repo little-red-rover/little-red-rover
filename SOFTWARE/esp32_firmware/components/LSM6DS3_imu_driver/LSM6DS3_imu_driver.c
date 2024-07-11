@@ -19,8 +19,8 @@
 
 #define IMU_TASK_STACK_SIZE (2048)
 
-#define SCL_PIN 2
-#define SDA_PIN 3
+#define SCL_PIN 1
+#define SDA_PIN 2
 
 static const char *TAG = "imu driver";
 

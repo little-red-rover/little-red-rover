@@ -22,19 +22,19 @@
 
 #define DRIVE_BASE_TASK_SIZE (2048)
 
-#define MOTOR_ENABLE 6
+#define MOTOR_ENABLE 5
 
-#define LEFT_MOTOR_PWM_A_PIN 7
+#define LEFT_MOTOR_PWM_A_PIN 6
 #define LEFT_MOTOR_PWM_A_CHANNEL 0
-#define LEFT_MOTOR_PWM_B_PIN 8
+#define LEFT_MOTOR_PWM_B_PIN 7
 #define LEFT_MOTOR_PWM_B_CHANNEL 1
-#define RIGHT_MOTOR_PWM_A_PIN 9
+#define RIGHT_MOTOR_PWM_A_PIN 8
 #define RIGHT_MOTOR_PWM_A_CHANNEL 2
-#define RIGHT_MOTOR_PWM_B_PIN 10
+#define RIGHT_MOTOR_PWM_B_PIN 9
 #define RIGHT_MOTOR_PWM_B_CHANNEL 3
 
-#define LEFT_ENCODER_PIN 5
-#define RIGHT_ENCODER_PIN 4
+#define LEFT_ENCODER_PIN 4
+#define RIGHT_ENCODER_PIN 3
 
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
 #define PWM_FREQ_HZ 4000
@@ -97,10 +97,6 @@ static void set_diff_drive(double left, double right)
 static void drive_base_driver_task(void *arg)
 {
 	while (get_uros_state() != AGENT_CONNECTED) {
-		ESP_LOGI(TAG,
-				 "Left encoder: %d, | Right encoder: %d",
-				 gpio_get_level(LEFT_ENCODER_PIN),
-				 gpio_get_level(RIGHT_ENCODER_PIN));
 		vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
 	set_drive_base_enabled(true);

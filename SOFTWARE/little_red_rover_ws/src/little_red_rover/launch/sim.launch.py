@@ -24,6 +24,33 @@ def generate_launch_description():
             description="Use simulation (Gazebo) clock if true",
         ),
         IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
+            ),
+            launch_arguments={
+                "gz_args": f"-r -s --headless-rendering {os.path.join(pkg_lrr,'testing.sdf')}"
+            }.items(),
+            # launch_arguments={
+            #     "gz_args": f"-s -r --headless-rendering sensors_demo.sdf"
+            # }.items(),
+        ),
+        ExecuteProcess(
+            cmd=["ros2", "param", "set", "/gazebo", "use_sim_time", use_sim_time]
+        ),
+        Node(
+            package="ros_gz_bridge",
+            executable="parameter_bridge",
+            # arguments=[
+            #     # '/model/vehicle_blue/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            #     # '/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
+            # ],
+            arguments=[
+                "/camera@sensor_msgs/msg/Image@gz.msgs.Image",
+                "/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
+            ],
+            # output="screen",
+        ),
+        IncludeLaunchDescription(
             XMLLaunchDescriptionSource(
                 [
                     os.path.join(
@@ -32,26 +59,6 @@ def generate_launch_description():
                     "/rosbridge_websocket_launch.xml",
                 ]
             )
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
-            ),
-            launch_arguments={
-                "gz_args": f"-r -s --headless-rendering {os.path.join(pkg_lrr,'testing.sdf')}"
-            }.items(),
-        ),
-        ExecuteProcess(cmd=["gz", "launch", "-v", "4", "/websocket.gzlaunch"]),
-        ExecuteProcess(
-            cmd=["ros2", "param", "set", "/gazebo", "use_sim_time", use_sim_time]
-        ),
-        Node(
-            package="ros_gz_bridge",
-            executable="parameter_bridge",
-            arguments=[
-                # '/model/vehicle_blue/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-                # '/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
-            ],
         ),
     ]
 

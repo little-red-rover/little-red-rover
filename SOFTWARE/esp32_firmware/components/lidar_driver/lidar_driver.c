@@ -17,14 +17,14 @@
 #include <rcl/rcl.h>
 
 #include <math.h>
-#define deg_2_rad(angleInDegrees) ((angleInDegrees)*M_PI / 180.0)
+#define deg_2_rad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
 
-#define LIDAR_TEST_TXD (4)
-#define LIDAR_TEST_RXD (20)
-#define LIDAR_TEST_RTS (UART_PIN_NO_CHANGE)
-#define LIDAR_TEST_CTS (UART_PIN_NO_CHANGE)
+#define LIDAR_TXD (17)
+#define LIDAR_RXD (18)
+#define LIDAR_RTS (UART_PIN_NO_CHANGE)
+#define LIDAR_CTS (UART_PIN_NO_CHANGE)
 
-#define LIDAR_UART_PORT_NUM (0)
+#define LIDAR_UART_PORT_NUM (1)
 #define LIDAR_UART_BAUD_RATE (230400)
 #define LIDAR_TASK_STACK_SIZE (2048)
 #define BUF_SIZE 1024
@@ -154,11 +154,8 @@ static void lidar_driver_task(void *arg)
 
 	ESP_ERROR_CHECK(uart_param_config(LIDAR_UART_PORT_NUM, &uart_config));
 
-	ESP_ERROR_CHECK(uart_set_pin(LIDAR_UART_PORT_NUM,
-								 LIDAR_TEST_TXD,
-								 LIDAR_TEST_RXD,
-								 LIDAR_TEST_RTS,
-								 LIDAR_TEST_CTS));
+	ESP_ERROR_CHECK(uart_set_pin(
+	  LIDAR_UART_PORT_NUM, LIDAR_TXD, LIDAR_RXD, LIDAR_RTS, LIDAR_CTS));
 
 	uint8_t start_chars[2] = { 0x00, 0x00 };
 	LiDARFrame scan_data;
@@ -171,6 +168,7 @@ static void lidar_driver_task(void *arg)
 			start_chars[1] = start_chars[0];
 			continue;
 		}
+		ESP_LOGI(TAG, "Got packet start");
 		scan_data.header = HEADER;
 		scan_data.ver_len = VERLEN;
 

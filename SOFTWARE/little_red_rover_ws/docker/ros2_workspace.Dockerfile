@@ -41,6 +41,7 @@ COPY ../src /little_red_rover_ws/src
 WORKDIR /little_red_rover_ws
 
 RUN apt update && \
+	apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-rosbridge-server && \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y 
 

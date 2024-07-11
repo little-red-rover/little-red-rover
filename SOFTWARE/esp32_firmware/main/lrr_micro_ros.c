@@ -19,23 +19,15 @@
 
 void app_main(void)
 {
-	// Set GPIO so motors don't immediately start running.
-	// This won't be needed in the next hardware revision.
-	gpio_set_direction(7, GPIO_MODE_OUTPUT);
-	gpio_set_direction(8, GPIO_MODE_OUTPUT);
-	gpio_set_direction(9, GPIO_MODE_OUTPUT);
-	gpio_set_direction(10, GPIO_MODE_OUTPUT);
-
-	gpio_set_level(7, 0);
-	gpio_set_level(8, 0);
-	gpio_set_level(9, 0);
-	gpio_set_level(10, 0);
 
 	drive_base_driver_init();
+	printf("Drive base init complete");
 
 	LSM6DS3_imu_driver_init();
+	printf("IMU init complete");
 
 	lidar_driver_init();
+	printf("Lidar init complete");
 
 	wifi_mgr_init();
 

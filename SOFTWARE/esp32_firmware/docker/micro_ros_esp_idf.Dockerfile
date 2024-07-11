@@ -9,7 +9,7 @@ RUN mkdir -p ~/esp && \
 	git clone --depth=1 -b release/v5.2 --single-branch --recursive --shallow-submodules https://github.com/espressif/esp-idf.git
 
 RUN cd ~/esp/esp-idf && \
-	./install.sh esp32,esp32c3
+	./install.sh esp32s3
 
 RUN . $HOME/esp/esp-idf/export.sh && \
 	pip3 install catkin_pkg lark-parser colcon-common-extensions protobuf cryptography
