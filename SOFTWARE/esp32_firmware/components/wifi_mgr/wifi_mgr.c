@@ -10,29 +10,27 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_spiffs.h"
-#include "esp_vfs_fat.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "nvs_flash.h"
 #include "portmacro.h"
-#include "sdkconfig.h"
 
 #include <esp_wifi.h>
 #include <wifi_provisioning/manager.h>
 #include <wifi_provisioning/scheme_softap.h>
 
 #include "dhcpserver/dhcpserver.h"
-#include "dhcpserver/dhcpserver_options.h"
 
-#include "lwip/err.h"
 #include "lwip/lwip_napt.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
 #include <lwip/netdb.h>
 
 #include "esp_mac.h"
 
 #include "wifi_mgr.h"
+
+#define REPROVISION_PIN 11
+
+#define WIFI_CONNECTION_TIMEOUT_MS 10000
 
 #define DEFAULT_AP_IP "192.168.4.1"
 #define DEFAULT_DNS "8.8.8.8"
@@ -298,6 +296,7 @@ void wifi_mgr_init()
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 	/* WIFI INIT */
+	esp_wifi_disconnect();
 	ESP_ERROR_CHECK(esp_netif_init());
 
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -356,12 +355,10 @@ void wifi_mgr_init()
 	ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 	wifi_prov_scheme_softap_set_httpd_handle((void *)(&_server));
 
-	// This will be tied to a button
 	// wifi_prov_mgr_reset_provisioning();
 
 	ESP_ERROR_CHECK(wifi_prov_mgr_disable_auto_stop(0));
 
-	/*  */
 	bool provisioned = false;
 	ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
@@ -391,7 +388,17 @@ void wifi_mgr_init()
 	ESP_LOGI(TAG, "ip_napt enabled");
 
 	/* Wait for Wi-Fi connection */
-	xEventGroupWaitBits(
-	  s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
-	ESP_LOGI(TAG, "Device is provisioned and connected.");
+	EventBits_t wifi_ret =
+	  xEventGroupWaitBits(s_wifi_event_group,
+						  WIFI_CONNECTED_BIT,
+						  false,
+						  true,
+						  WIFI_CONNECTION_TIMEOUT_MS / portTICK_PERIOD_MS);
+	if (wifi_ret & WIFI_CONNECTED_BIT) {
+		ESP_LOGI(TAG, "Device is provisioned and connected.");
+	} else {
+		// Error handling is for chumps
+		ESP_LOGE(TAG, "Wifi connection timed out. Rebooting...");
+		esp_restart();
+	}
 }

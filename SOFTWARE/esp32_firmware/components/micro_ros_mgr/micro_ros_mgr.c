@@ -7,12 +7,10 @@
 #include <unistd.h>
 
 #include "esp_log.h"
-#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
 
-#include "sensor_msgs/msg/laser_scan.h"
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
@@ -25,7 +23,6 @@
 #include <uros_network_interfaces.h>
 
 #include "pub_sub_utils.h"
-#include "wifi_mgr.h"
 
 #define RCCHECK(fn)                                                            \
 	{                                                                          \
@@ -215,10 +212,8 @@ void micro_ros_task(void *arg)
 									   : AGENT_DISCONNECTED;);
 
 				if (state == AGENT_CONNECTED) {
-					// RCCHECK(
 					rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-					//   );
-					usleep(10000);
+					usleep(1000);
 				}
 				break;
 			case AGENT_DISCONNECTED:

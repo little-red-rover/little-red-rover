@@ -19,7 +19,6 @@
 
 void app_main(void)
 {
-
 	drive_base_driver_init();
 
 	LSM6DS3_imu_driver_init();

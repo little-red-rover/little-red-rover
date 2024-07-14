@@ -19,6 +19,8 @@
 #include <math.h>
 #define deg_2_rad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
 
+#define LIDAR_PWM (47)
+
 #define LIDAR_TXD (17)
 #define LIDAR_RXD (18)
 #define LIDAR_RTS (UART_PIN_NO_CHANGE)
@@ -26,7 +28,7 @@
 
 #define LIDAR_UART_PORT_NUM (1)
 #define LIDAR_UART_BAUD_RATE (230400)
-#define LIDAR_TASK_STACK_SIZE (2048)
+#define LIDAR_TASK_STACK_SIZE (4098)
 #define BUF_SIZE 1024
 
 static const char *TAG = "lidar driver";
@@ -182,7 +184,8 @@ static void lidar_driver_task(void *arg)
 					 "Invalid checksum, got %d, expected %d",
 					 checksum,
 					 scan_data.crc8);
-		} else {
+		} else if (get_uros_state() == AGENT_CONNECTED) {
+			// todo: race condition
 			publish_scan(&scan_data);
 		}
 	}
@@ -192,6 +195,10 @@ static void lidar_driver_task(void *arg)
 
 void lidar_driver_init()
 {
+	// Highest scanning frequency
+	gpio_set_direction(LIDAR_PWM, GPIO_MODE_OUTPUT);
+	gpio_set_level(LIDAR_PWM, 1);
+
 	lidar_publisher = register_publisher(
 	  ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
 	  "lrr_lidar_scan");
