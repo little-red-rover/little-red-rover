@@ -11,9 +11,16 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        (os.path.join("share", package_name), glob("launch/*.launch.py")),
-        (os.path.join("share", package_name), glob("assets/rover/*")),
-        (os.path.join("share", package_name), glob("assets/worlds/*")),
+        (os.path.join("share", package_name, "launch"), glob("launch/*.launch.py")),
+        (os.path.join("share", package_name, "config"), glob("config/*")),
+        (
+            os.path.join("share", package_name, "description"),
+            [f for f in glob("description/*") if os.path.isfile(f)],
+        ),
+        (
+            os.path.join("share", package_name, "description", "rover"),
+            [f for f in glob("description/*/*") if os.path.isfile(f)],
+        ),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

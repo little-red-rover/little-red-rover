@@ -12,6 +12,7 @@
 #include <geometry_msgs/msg/twist.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
 #include "drive_base_driver.h"
 #include "micro_ros_mgr.h"
@@ -106,13 +107,19 @@ static void set_diff_drive(double left, double right)
 	set_motor_speed(&left_motor_handle, left);
 	set_motor_speed(&right_motor_handle, right);
 }
+double clamp(double d, double min, double max) {
+  const double t = d < min ? min : d;
+  return t > max ? max : t;
+}
 
 void cmd_vel_callback(const void *msgin)
 {
 	const geometry_msgs__msg__Twist *msg =
 	  (const geometry_msgs__msg__Twist *)msgin;
-	set_diff_drive(msg->linear.x + msg->angular.z,
-				   msg->linear.x - msg->angular.z);
+	double x = msg->angular.z;
+	double y = msg->linear.x;
+	set_diff_drive(clamp(y + x, -1.0, 1.0),
+				   clamp(y - x, -1.0, 1.0));
 }
 
 static void drive_base_driver_task(void *arg)
@@ -122,14 +129,11 @@ static void drive_base_driver_task(void *arg)
 	}
 	set_drive_base_enabled(true);
 	while (1) {
-		int left_pulse_cnt;
-		int right_pulse_cnt;
-		pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
-		pcnt_unit_get_count(right_motor_handle.encoder.unit, &right_pulse_cnt);
-		// ESP_LOGI(TAG,
-		// 		 "Left encoder count: %d | Right encoder count: %d",
-		// 		 left_pulse_cnt,
-		// 		 right_pulse_cnt);
+		// int left_pulse_cnt;
+		// int right_pulse_cnt;
+		// pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
+		// pcnt_unit_get_count(right_motor_handle.encoder.unit,
+		// &right_pulse_cnt);
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
@@ -224,9 +228,15 @@ void drive_base_driver_init()
 
 	cmd_vel_subscription = register_subscription(
 	  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-	  "lrr_teleop",
+	  "cmd_vel",
 	  cmd_vel_msg,
 	  &cmd_vel_callback);
+
+	// cmd_vel_subscription = register_subscription(
+	//   ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+	//   "lrr_teleop",
+	//   cmd_vel_msg,
+	//   &cmd_vel_callback);
 
 	// START TASK
 	xTaskCreate(drive_base_driver_task,

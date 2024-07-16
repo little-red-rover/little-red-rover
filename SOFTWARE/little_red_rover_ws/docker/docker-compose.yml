@@ -24,7 +24,7 @@ services:
     urdf_server:
         image: nginx:alpine
         volumes:
-            - ../src/little_red_rover/assets:/usr/share/nginx/html
+            - ../src/little_red_rover/description/rover:/usr/share/nginx/html
             - ./nginx.conf:/etc/nginx/nginx.conf
         ports:
           - "8100:80"

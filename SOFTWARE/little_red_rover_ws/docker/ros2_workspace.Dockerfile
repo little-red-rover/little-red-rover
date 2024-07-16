@@ -5,14 +5,14 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /ros2_setup.bash
 
 ### tooling
 RUN apt-get update && \
-apt-get install -y --no-install-recommends python3 python3-pip wget
+	apt-get install -y --no-install-recommends python3 python3-pip wget
 
 RUN pip3 install protobuf cryptography pathlib
 
 ### gazebo setup
 RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
-apt-get update && \
-apt-get install -y --no-install-recommends ros-$ROS_DISTRO-ros-gz
+	apt-get update && \
+	apt-get install -y --no-install-recommends ros-$ROS_DISTRO-ros-gz
 
 # By default gazebo calculates lidar data using the GPU, but GPU operations aren't possible cross platform in Docker.
 # Setting this ENV variable causes it to be calculated on the CPU, but slower.
@@ -41,14 +41,20 @@ COPY ../src /little_red_rover_ws/src
 WORKDIR /little_red_rover_ws
 
 RUN apt update && \
-	apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-rosbridge-server && \
+	apt-get install -y --no-install-recommends \ 
+	ros-${ROS_DISTRO}-rosbridge-server \
+	ros-${ROS_DISTRO}-ros2-control \
+	ros-${ROS_DISTRO}-ros2-controllers \
+	ros-${ROS_DISTRO}-controller-manager \
+	ros-${ROS_DISTRO}-xacro && \
+	ros-${ROS_DISTRO}-teleop-twist-joy \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y 
 
 ### Dev env setup
 RUN apt-get update && \
-apt-get install -y --no-install-recommends black iputils-ping python3-venv && \
-pip3 install black
+	apt-get install -y --no-install-recommends black iputils-ping python3-venv && \
+	pip3 install black
 
 RUN source /ros2_setup.bash && colcon build
 RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash

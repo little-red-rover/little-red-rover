@@ -1,0 +1,246 @@
+<robot name="little red rover">
+<link name="base_link"></link>
+<joint name="base_link_to_base" type="fixed">
+<parent link="base_link"/>
+<child link="robot_body" />
+<origin rpy="0.0 0 0" xyz="0 0 0"/>
+</joint>
+<link name="robot_body">
+<collision>
+<origin xyz="-0.086199999999999998845 -1.2143064331837649661e-17 0.0015000000000000004649" rpy="-1.5265566588595798893e-16 7.9502388104304675625e-31 1.3033732703949976057e-30" />
+<geometry>
+<mesh filename="http://localhost:8100/skid.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.086200000000000831513 3.8163916471489756077e-17 0.0015000000000000050186" rpy="-4.5796699765786721216e-16 2.3850716431291444726e-30 3.9101198111849427206e-30" />
+<geometry>
+<mesh filename="http://localhost:8100/motor_mount_shim.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011299999999997131783 -0.027749999999999875461 -0.011370000000000199392" rpy="-3.141592653589793116 -1.570796326794896336 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_mount.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/encoder_ring.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.086199999999998500044 -2.8671509610944468173e-17 0.0015000000000000811295" rpy="4.9303806576311792749e-32 3.5032461608119399976e-46 8.6361685550939383751e-78" />
+<geometry>
+<mesh filename="http://localhost:8100/lidar_motor.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.086199999999999984968 -1.0408340855860842566e-17 0.0025000000000000126288" rpy="3.141592653589793116 7.9502388104304675625e-31 1.3033732703949976057e-30" />
+<geometry>
+<mesh filename="http://localhost:8100/motor_mount_shim.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999903821 -0.011370000000000003368" rpy="2.6530262401855620664e-29 1.5707963267948961139 0" />
+<geometry>
+<mesh filename="http://localhost:8100/encoder_ring.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011299999999997145661 0.027699999999999894845 -0.011370000000000225412" rpy="3.141592653589793116 -1.570796326794896336 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_mount.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.086199999999999998845 -1.0408340855860842566e-17 0.0014999999999999995975" rpy="-1.5265566588595798893e-16 7.9502388104304675625e-31 1.3033732703949976057e-30" />
+<geometry>
+<mesh filename="http://localhost:8100/pcb.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.086200000000000026601 -2.7755575615628913511e-17 0.0015000000000000013323" rpy="-4.5796699765786721216e-16 2.3850716431291444726e-30 3.9101198111849427206e-30" />
+<geometry>
+<mesh filename="http://localhost:8100/lidar_top.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997016162 0.027799999999999876893 -0.011370000000000324292" rpy="-6.9068277805714204522e-29 1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<collision>
+<origin xyz="-0.011199999999997394332 -0.027649999999999862188 -0.011369999999999999898" rpy="3.141592653589793116 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="http://localhost:8100/tt_motor_3777_v10.stl"/>
+</geometry>
+</collision>
+<visual>
+<origin xyz="0 0 0" rpy="0 -0 0" />
+<geometry>
+<mesh filename="http://localhost:8100/robot_body_visual.stl"/>
+</geometry>
+<material name="robot_body_material">
+<color rgba="0.5367631145567938189 0.5544912545973401663 0.43199857592845941623 1.0"/>
+</material>
+</visual>
+<inertial>
+<origin xyz="-0.061845236849630697007 1.9311688626235378743e-05 0.0010887156206689954478" rpy="0 0 0"/>
+<mass value="0.19676137874980109688" />
+<inertia ixx="0.00012993268070770976519" ixy="-1.0736949394674406614e-07"  ixz="4.0258881692539616036e-05" iyy="0.00027944256073959291382" iyz="4.6368993948478567085e-08" izz="0.00031665653380701780633" />
+</inertial>
+</link>
+
+<link name="wheel">
+<collision>
+<origin xyz="-1.7347234759768070944e-18 3.4694469519536141888e-18 -0.027940000000000006497" rpy="4.5323247205505802138e-45 -0 0" />
+<geometry>
+<mesh filename="http://localhost:8100/wheel.stl"/>
+</geometry>
+</collision>
+<visual>
+<origin xyz="0 0 0" rpy="0 -0 0" />
+<geometry>
+<mesh filename="http://localhost:8100/wheel_visual.stl"/>
+</geometry>
+<material name="wheel_material">
+<color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+</material>
+</visual>
+<inertial>
+<origin xyz="-2.4618423152424543275e-17 5.2761051152944761798e-17 -0.014337453204997982134" rpy="0 0 0"/>
+<mass value="0.060316879417403129748" />
+<inertia ixx="2.3131869643683833067e-05" ixy="0"  ixz="0" iyy="2.3131206012492695268e-05" iyz="8.3445100702762712003e-50" izz="3.8316124169634600165e-05" />
+</inertial>
+</link>
+
+<joint name="wheel_right_speed" type="continuous">
+<origin xyz="-0.011199999999997394332 -0.043149999999999869016 -0.011370000000000001633" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+<parent link="robot_body" />
+<child link="wheel" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+<link name="wheel_2">
+<collision>
+<origin xyz="0 -1.7347234759768070944e-18 0.027940000000000020375" rpy="3.141592653589793116 -1.019518080370513794e-45 0" />
+<geometry>
+<mesh filename="http://localhost:8100/wheel.stl"/>
+</geometry>
+</collision>
+<visual>
+<origin xyz="0 0 0" rpy="0 -0 0" />
+<geometry>
+<mesh filename="http://localhost:8100/wheel_2_visual.stl"/>
+</geometry>
+<material name="wheel_2_material">
+<color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
+</material>
+</visual>
+<inertial>
+<origin xyz="-2.288369967644773618e-17 -5.1026327676967954704e-17 0.014337453204997996012" rpy="0 0 0"/>
+<mass value="0.060316879417403129748" />
+<inertia ixx="2.3131869643683833067e-05" ixy="0"  ixz="6.264734069517384396e-50" iyy="2.3131206012492695268e-05" iyz="0" izz="3.8316124169634600165e-05" />
+</inertial>
+</link>
+
+<joint name="wheel_left_speed" type="continuous">
+<origin xyz="-0.011199999999997016162 0.043299999999999880251 -0.011370000000000322557" rpy="1.5707963267948970021 -2.2261824227171183414e-30 3.141592653589793116" />
+<parent link="robot_body" />
+<child link="wheel_2" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+
+</robot>

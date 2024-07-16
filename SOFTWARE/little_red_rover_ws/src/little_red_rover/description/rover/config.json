@@ -3,7 +3,7 @@
 	"outputFormat": "urdf",
 	"assemblyName": "robot",
 	"mergeSTLs": "visual",
-	"packageName": "http://localhost:8100/rover/",
+	"packageName": "http://localhost:8100/",
 	"addDummyBaseLink" : true,
 	"robotName" : "little red rover",
 	"postImportCommands": ["sed -i 's|package://||g' robot.urdf"]

@@ -1,13 +1,13 @@
 {
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
-    "documentMicroversion": "ad4ddceae617354e77d0ac9b",
+    "documentMicroversion": "50c361a9f5b9b512ef35303b",
     "elementId": "372d27b8e90a75028e0b67d5",
     "fullConfiguration": "default",
-    "id": "MjdS68JcqduTlv/Wp",
+    "id": "MyoKaV8KGbSfadzsz",
     "isStandardContent": false,
-    "name": "motor_mount_shim <2>",
-    "partId": "JiD",
+    "name": "lidar_top <1>",
+    "partId": "JLD",
     "suppressed": false,
     "type": "Part"
 }

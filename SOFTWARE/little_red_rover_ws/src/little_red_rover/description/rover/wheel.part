@@ -1,13 +1,13 @@
 {
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
-    "documentMicroversion": "ad4ddceae617354e77d0ac9b",
-    "elementId": "23f8f9052d19959c7fc95d94",
+    "documentMicroversion": "50c361a9f5b9b512ef35303b",
+    "elementId": "94afc5155719ed50597af393",
     "fullConfiguration": "default",
-    "id": "MwEnVp5PK8xebnuZe",
+    "id": "MpEd3sIbJLsHdbojP",
     "isStandardContent": false,
-    "name": "TT Motor 3777 v10 <1>",
-    "partId": "JFD",
+    "name": "wheel <1>",
+    "partId": "JHD",
     "suppressed": false,
     "type": "Part"
 }

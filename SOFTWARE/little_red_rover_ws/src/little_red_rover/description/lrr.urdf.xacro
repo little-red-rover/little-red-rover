@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- Basic differential drive mobile base -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="little_red_rover">
+	<xacro:include
+		filename="$(find little_red_rover)/description/rover/robot.urdf" />
+
+
+	<!-- Import diffbot ros2_control description -->
+	<!-- <xacro:include -->
+	<!-- 	filename="$(find little_red_rover)/config/diffbot.ros2_control.xacro" /> -->
+	<!---->
+	<!-- <xacro:diffbot prefix="$(arg prefix)" /> -->
+	<!---->
+	<!-- <xacro:diffbot_ros2_control -->
+	<!-- 	name="DiffBot" prefix="$(arg prefix)" use_mock_hardware="$(arg use_mock_hardware)" /> -->
+
+</robot>

@@ -1,12 +1,18 @@
-import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import (
+    Command,
+    FindExecutable,
+    PathJoinSubstitution,
+    LaunchConfiguration,
+)
+from launch_ros.substitutions import FindPackageShare
 from launch.actions import IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
+from launch_ros.descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -21,34 +27,90 @@ def generate_launch_description():
     robot_launch = [
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                [get_package_share_directory("little_red_rover"), "/sim.launch.py"]
+                [
+                    get_package_share_directory("little_red_rover"),
+                    "/launch/sim.launch.py",
+                ]
             ),
             condition=IfCondition(run_sim),
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                [get_package_share_directory("little_red_rover"), "/hardware.launch.py"]
+                [
+                    get_package_share_directory("little_red_rover"),
+                    "/launch/hardware.launch.py",
+                ]
             ),
             condition=UnlessCondition(run_sim),
         ),
     ]
 
-    # VISUALIZATION
-    # Settings / utilities relating to visualization of the robot.
-    urdf_file_name = "robot.urdf"
-    urdf = os.path.join(get_package_share_directory("little_red_rover"), urdf_file_name)
-    with open(urdf, "r") as infp:
-        robot_desc = infp.read()
+    # XACRO DESCRIPTION
+    robot_description_content = ParameterValue(
+        Command(
+            [
+                PathJoinSubstitution([FindExecutable(name="xacro")]),
+                " ",
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("little_red_rover"),
+                        "description",
+                        "lrr.urdf.xacro",
+                    ]
+                ),
+            ]
+        ),
+        value_type=str,
+    )
 
-    visualization = [
+    # DIFFERENTIAL DRIVE CONTROLLER
+    robot_controllers = PathJoinSubstitution(
+        [
+            FindPackageShare("little_red_rover"),
+            "config",
+            "lrr_controllers.yaml",
+        ]
+    )
+
+    diff_drive = [
+        Node(
+            package="controller_manager",
+            executable="ros2_control_node",
+            parameters=[robot_controllers],
+            output="both",
+        ),
         Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
-            name="robot_state_publisher",
-            output="screen",
-            parameters=[{"use_sim_time": run_sim, "robot_description": robot_desc}],
-            arguments=[urdf],
+            output="both",
+            parameters=[
+                {
+                    "use_sim_time": run_sim,
+                    "robot_description": robot_description_content,
+                }
+            ],
+            remappings=[
+                ("/diff_drive_controller/cmd_vel_unstamped", "/cmd_vel"),
+            ],
+        ),
+        Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=[
+                "joint_state_broadcaster",
+                "--controller-manager",
+                "/controller_manager",
+            ],
+        ),
+        Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=[
+                "diffbot_base_controller",
+                "--controller-manager",
+                "/controller_manager",
+            ],
         ),
     ]
 
-    return LaunchDescription(config + robot_launch + visualization)
+    return LaunchDescription(config + robot_launch + diff_drive)
