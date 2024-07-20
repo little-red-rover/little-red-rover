@@ -2,12 +2,12 @@
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
     "documentMicroversion": "c37d7615af6df8a31133da49",
-    "elementId": "372d27b8e90a75028e0b67d5",
+    "elementId": "94afc5155719ed50597af393",
     "fullConfiguration": "default",
-    "id": "MyoKaV8KGbSfadzsz",
+    "id": "M5yAGDTmK0aEDM7x4",
     "isStandardContent": false,
-    "name": "lidar_top <1>",
-    "partId": "JLD",
+    "name": "wheel_left <2>",
+    "partId": "JHD",
     "suppressed": false,
     "type": "Part"
 }

@@ -168,75 +168,89 @@
 <mesh filename="http://localhost:8100/robot_body_visual.stl"/>
 </geometry>
 <material name="robot_body_material">
-<color rgba="0.5367631145567938189 0.5544912545973401663 0.43199857592845941623 1.0"/>
+<color rgba="0.53180996867279028972 0.52626810733991702396 0.43503824126611950751 1.0"/>
 </material>
 </visual>
 <inertial>
-<origin xyz="-0.061845236849630697007 1.9311688626235378743e-05 0.0010887156206689954478" rpy="0 0 0"/>
-<mass value="0.19676137874980109688" />
-<inertia ixx="0.00012993268070770976519" ixy="-1.0736949394674406614e-07"  ixz="4.0258881692539616036e-05" iyy="0.00027944256073959291382" iyz="4.6368993948478567085e-08" izz="0.00031665653380701780633" />
+<origin xyz="-0.061565968758658065618 1.9618765251288891962e-05 0.001020015740013184612" rpy="0 0 0"/>
+<mass value="0.19785237681803841125" />
+<inertia ixx="0.00013032668573239632051" ixy="-1.1042952069274830074e-07"  ixz="4.0943477832728162344e-05" iyy="0.00028243241477063330772" iyz="4.7121759764013377967e-08" izz="0.00031966479990597239987" />
 </inertial>
 </link>
 
-<link name="wheel">
+<link name="lidar_frame">
+<inertial>
+<origin xyz="0 0 0" rpy="0 0 0" />
+<mass value="1e-9" />
+<inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+</inertial>
+</link>
+<joint name="lidar_frame_frame" type="fixed">
+<origin xyz="-0.086199999999999873945 -3.4694469519536141888e-17 0.020785000000000775078" rpy="-4.5796699765786721216e-16 2.3850716431291444726e-30 3.9101198111849427206e-30" />
+<parent link="robot_body" />
+<child link="lidar_frame" />
+<axis xyz="0 0 0"/>
+</joint>
+
+<link name="wheel_left">
 <collision>
-<origin xyz="-1.7347234759768070944e-18 3.4694469519536141888e-18 -0.027940000000000006497" rpy="4.5323247205505802138e-45 -0 0" />
+<origin xyz="-1.7347234759768070944e-18 0 -0.027940000000000006497" rpy="0 -0 1.570796326794896558" />
 <geometry>
-<mesh filename="http://localhost:8100/wheel.stl"/>
+<mesh filename="http://localhost:8100/wheel_left.stl"/>
 </geometry>
 </collision>
 <visual>
 <origin xyz="0 0 0" rpy="0 -0 0" />
 <geometry>
-<mesh filename="http://localhost:8100/wheel_visual.stl"/>
+<mesh filename="http://localhost:8100/wheel_left_visual.stl"/>
 </geometry>
-<material name="wheel_material">
+<material name="wheel_left_material">
 <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
 </material>
 </visual>
 <inertial>
-<origin xyz="-2.4618423152424543275e-17 5.2761051152944761798e-17 -0.014337453204997982134" rpy="0 0 0"/>
+<origin xyz="-5.1034898874414494824e-17 -2.2897226097418055381e-17 -0.014337453204997982134" rpy="0 0 0"/>
 <mass value="0.060316879417403129748" />
-<inertia ixx="2.3131869643683833067e-05" ixy="0"  ixz="0" iyy="2.3131206012492695268e-05" iyz="8.3445100702762712003e-50" izz="3.8316124169634600165e-05" />
+<inertia ixx="2.3131206012492695268e-05" ixy="0"  ixz="0" iyy="2.3131869643683839843e-05" iyz="2.6846162978893990685e-50" izz="3.8316124169634606942e-05" />
 </inertial>
 </link>
 
-<joint name="wheel_right_speed" type="continuous">
-<origin xyz="-0.011199999999997394332 -0.043149999999999869016 -0.011370000000000001633" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+<joint name="wheel_left_speed" type="continuous">
+<origin xyz="-0.011199999999997394332 -0.043149999999999869016 -0.011369999999999999898" rpy="-1.570796326794896558 1.5707963267948594765 0" />
 <parent link="robot_body" />
-<child link="wheel" />
+<child link="wheel_left" />
 <axis xyz="0 0 1"/>
 <limit effort="1" velocity="20" />
 <joint_properties friction="0.0"/>
 </joint>
 
-<link name="wheel_2">
+<link name="wheel_right">
 <collision>
-<origin xyz="0 -1.7347234759768070944e-18 0.027940000000000020375" rpy="3.141592653589793116 -1.019518080370513794e-45 0" />
+<origin xyz="0 -3.4694469519536141888e-18 0.027940000000000006497" rpy="3.141592653589793116 5.254869241218064016e-46 0" />
 <geometry>
-<mesh filename="http://localhost:8100/wheel.stl"/>
+<mesh filename="http://localhost:8100/wheel_right.stl"/>
 </geometry>
 </collision>
 <visual>
 <origin xyz="0 0 0" rpy="0 -0 0" />
 <geometry>
-<mesh filename="http://localhost:8100/wheel_2_visual.stl"/>
+<mesh filename="http://localhost:8100/wheel_right_visual.stl"/>
 </geometry>
-<material name="wheel_2_material">
+<material name="wheel_right_material">
 <color rgba="0.98039215686274505668 0.71372549019607844922 0.0039215686274509803377 1.0"/>
 </material>
 </visual>
 <inertial>
-<origin xyz="-2.288369967644773618e-17 -5.1026327676967954704e-17 0.014337453204997996012" rpy="0 0 0"/>
-<mass value="0.060316879417403129748" />
-<inertia ixx="2.3131869643683833067e-05" ixy="0"  ixz="6.264734069517384396e-50" iyy="2.3131206012492695268e-05" iyz="0" izz="3.8316124169634600165e-05" />
+<origin xyz="-2.2907362206875763688e-17 -5.23153488857244044e-17 -0.014337453204998061931" rpy="0 0 0"/>
+<mass value="0.060316879417403573838" />
+<inertia ixx="2.3131869643683941487e-05" ixy="0"  ixz="3.4405818888273330964e-50" iyy="2.3131206012492810465e-05" iyz="0" izz="3.8316124169634715362e-05" />
 </inertial>
 </link>
 
-<joint name="wheel_left_speed" type="continuous">
-<origin xyz="-0.011199999999997016162 0.043299999999999880251 -0.011370000000000322557" rpy="1.5707963267948970021 -2.2261824227171183414e-30 3.141592653589793116" />
+<joint name="wheel_right_speed" type="continuous">
+<origin xyz="-0.011199999999997014427 0.043299999999999880251 -0.011370000000000322557" rpy="-1.57079632679489678 5.4123372450415540448e-16 -3.141592653589793116" />
 <parent link="robot_body" />
-<child link="wheel_2" />
+<child link="wheel_right" />
 <axis xyz="0 0 1"/>
 <limit effort="1" velocity="20" />
 <joint_properties friction="0.0"/>

@@ -113,4 +113,25 @@ def generate_launch_description():
         ),
     ]
 
-    return LaunchDescription(config + robot_launch + diff_drive)
+    # TELEOPERATION
+    teleop = [
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    get_package_share_directory("teleop_twist_joy"),
+                    "/launch/teleop-launch.py",
+                ]
+            ),
+            launch_arguments={
+                "config_filepath": PathJoinSubstitution(
+                    [
+                        get_package_share_directory("little_red_rover"),
+                        "config",
+                        "joy_config.yaml",
+                    ]
+                ),
+            }.items(),
+        ),
+    ]
+
+    return LaunchDescription(config + robot_launch + diff_drive + teleop)

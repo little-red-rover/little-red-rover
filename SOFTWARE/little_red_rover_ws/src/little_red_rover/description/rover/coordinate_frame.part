@@ -1,13 +1,13 @@
 {
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
-    "documentMicroversion": "c37d7615af6df8a31133da49",
-    "elementId": "372d27b8e90a75028e0b67d5",
+    "documentMicroversion": "e8ee15ab358411aa487407d8",
+    "elementId": "5132633b2ed5b2caaabec6f4",
     "fullConfiguration": "default",
-    "id": "MyoKaV8KGbSfadzsz",
+    "id": "Mm3mPGWmO2IGng7C8",
     "isStandardContent": false,
-    "name": "lidar_top <1>",
-    "partId": "JLD",
+    "name": "coordinate_frame <1>",
+    "partId": "JHD",
     "suppressed": false,
     "type": "Part"
 }

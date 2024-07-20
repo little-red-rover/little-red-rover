@@ -1,7 +1,7 @@
 {
 	"documentId": "3c9bcb798eb55dc89c3300c0",
 	"outputFormat": "urdf",
-	"assemblyName": "robot",
+	"assemblyName": "simulation_robot",
 	"mergeSTLs": "visual",
 	"packageName": "http://localhost:8100/",
 	"addDummyBaseLink" : true,
