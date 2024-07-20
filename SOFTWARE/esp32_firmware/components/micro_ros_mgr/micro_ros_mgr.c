@@ -206,7 +206,7 @@ void micro_ros_task(void *arg)
 														  : WAITING_AGENT;
 				if (state == WAITING_AGENT) {
 					ESP_LOGI(TAG, "Failed to create micro_ros structures.");
-					destroy_entities();
+					// destroy_entities();
 				};
 				break;
 			case AGENT_CONNECTED:

@@ -13,7 +13,7 @@ services:
         ports:
             - "9002:9002" # gzweb
             - "9090:9090" # rosbridge
-            - "8001:8001/udp" # microros agent -> microros client
+            - "8001:8001/udp" # microros agent -> rover
     foxglove_bridge:
         image: foxglove_bridge
         build:
