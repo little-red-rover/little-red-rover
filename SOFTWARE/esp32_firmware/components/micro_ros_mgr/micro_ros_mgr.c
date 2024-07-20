@@ -110,6 +110,8 @@ void init_middleware()
 
 	rmw_options = *rcl_init_options_get_rmw_init_options(&init_options);
 
+	rmw_context = rmw_get_zero_initialized_context();
+
 	RCCHECK(rmw_uros_options_set_udp_address(
 	  MICRO_ROS_AGENT_IP, "8001", &rmw_options));
 }
@@ -131,7 +133,7 @@ rcl_ret_t create_entities()
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	ESP_LOGI(TAG, "Initing executor with %d handles", get_num_subscriptions());
+	ESP_LOGI(TAG, "Initing executor with %zu handles", get_num_subscriptions());
 	if (get_num_subscriptions() > 0) {
 		RCCHECK(rclc_executor_init(
 		  &executor, &support.context, get_num_subscriptions(), &allocator));
@@ -144,13 +146,13 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
-	rmw_shutdown(&rmw_context);
 	rmw_context = *rcl_context_get_rmw_context(&support.context);
 	(void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
+	RCCHECK(rmw_shutdown(&rmw_context));
 
 	destroy_pub_sub(&node);
-	rcl_node_fini(&node);
-	rcl_shutdown(&support.context);
+	RCCHECK(rcl_node_fini(&node));
+	RCCHECK(rcl_shutdown(&support.context));
 	rclc_executor_fini(&executor);
 	rclc_support_fini(&support);
 
@@ -185,7 +187,7 @@ void micro_ros_task(void *arg)
 			case WAITING_AGENT:
 				EXECUTE_EVERY_N_MS(
 				  500, rmw_context = rmw_get_zero_initialized_context();
-				  rmw_init(&rmw_options, &rmw_context);
+				  RCCHECK(rmw_init(&rmw_options, &rmw_context));
 				  state = (RMW_RET_OK == rmw_uros_ping_agent(100, 5))
 							? AGENT_AVAILABLE
 							: WAITING_AGENT;
@@ -194,7 +196,10 @@ void micro_ros_task(void *arg)
 					  get_micro_ros_agent_ip();
 					  RCCHECK(rmw_uros_options_set_udp_address(
 						MICRO_ROS_AGENT_IP, "8001", &rmw_options));
-				  } else { rmw_shutdown(&rmw_context); });
+				  } else {
+					  RCCHECK(rmw_shutdown(&rmw_context));
+					  ESP_LOGI(TAG, "Agent connected.");
+				  });
 				break;
 			case AGENT_AVAILABLE:
 				state = (RCL_RET_OK == create_entities()) ? AGENT_CONNECTED
@@ -217,9 +222,9 @@ void micro_ros_task(void *arg)
 				}
 				break;
 			case AGENT_DISCONNECTED:
+				ESP_LOGI(TAG, "Agent disconnected, attempting to reconnect.");
 				destroy_entities();
 				state = WAITING_AGENT;
-				ESP_LOGI(TAG, "Agent disconnected, attempting to reconnect.");
 				init_middleware();
 				break;
 			default:
