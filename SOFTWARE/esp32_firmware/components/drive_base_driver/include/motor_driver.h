@@ -17,9 +17,9 @@
  */
 typedef struct
 {
-	pcnt_channel_handle_t channel;
-	pcnt_unit_handle_t unit;
-	int count;
+    pcnt_channel_handle_t channel;
+    pcnt_unit_handle_t unit;
+    int count;
 } encoder_handle_t;
 
 /*
@@ -27,9 +27,9 @@ typedef struct
  */
 static int get_encoder_count(encoder_handle_t encoder)
 {
-	int ret;
-	pcnt_unit_get_count(encoder.unit, &ret);
-	return ret;
+    int ret;
+    pcnt_unit_get_count(encoder.unit, &ret);
+    return ret;
 };
 
 /*
@@ -37,15 +37,16 @@ static int get_encoder_count(encoder_handle_t encoder)
  */
 typedef struct
 {
-	ledc_channel_t chan_a;
-	ledc_channel_t chan_b;
-	gpio_num_t enable_pin;
-	float cmd_velocity;
-	float cmd_power;
-	float reported_speed;
-	encoder_handle_t encoder;
-	pid_ctrl_block_handle_t pid_controller;
-	esp_timer_handle_t pid_timer;
+    ledc_channel_t chan_a;
+    ledc_channel_t chan_b;
+    gpio_num_t enable_pin;
+    float cmd_velocity;
+    float reported_velocity;
+    float cmd_power;
+    encoder_handle_t encoder;
+    pid_ctrl_block_handle_t pid_controller;
+    esp_timer_handle_t pid_timer;
+    esp_timer_create_args_t pid_args;
 } motor_handle_t;
 
 /*
@@ -68,11 +69,12 @@ void configure_pwm(ledc_channel_t channel, int gpio);
  * encoder.
  */
 void configure_motor(motor_handle_t *motor,
-					 gpio_num_t pwm_a_pin,
-					 ledc_channel_t pwm_a_chan,
-					 gpio_num_t pwm_b_pin,
-					 ledc_channel_t pwm_b_chan,
-					 gpio_num_t encoder_pin);
+                     char *motor_name,
+                     gpio_num_t pwm_a_pin,
+                     ledc_channel_t pwm_a_chan,
+                     gpio_num_t pwm_b_pin,
+                     ledc_channel_t pwm_b_chan,
+                     gpio_num_t encoder_pin);
 
 /*
  * Initialize the PWM peripheral for use with motors.

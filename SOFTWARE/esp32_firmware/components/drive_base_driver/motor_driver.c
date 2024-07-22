@@ -34,7 +34,7 @@
 #include <math.h>
 
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
-#define PWM_FREQ_HZ 4000
+#define PWM_FREQ_HZ 20000
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -60,21 +60,21 @@ static void set_motor_power(motor_handle_t *motor, float power)
                       (uint32_t)(power * (float)(1 << PWM_TIMER_RESOLUTION)));
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_a, 0);
         pcnt_channel_set_edge_action(motor->encoder.channel,
-                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE,
-                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE);
+                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE);
     } else {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_b, 0);
         ledc_set_duty(LEDC_LOW_SPEED_MODE,
                       motor->chan_a,
                       (uint32_t)(-power * (float)(1 << PWM_TIMER_RESOLUTION)));
         pcnt_channel_set_edge_action(motor->encoder.channel,
-                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE);
+                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE,
+                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE);
     }
     if (power == 0) {
-        pcnt_channel_set_edge_action(motor->encoder.channel,
-                                     PCNT_CHANNEL_EDGE_ACTION_HOLD,
-                                     PCNT_CHANNEL_EDGE_ACTION_HOLD);
+        // pcnt_channel_set_edge_action(motor->encoder.channel,
+        //                              PCNT_CHANNEL_EDGE_ACTION_HOLD,
+        //                              PCNT_CHANNEL_EDGE_ACTION_HOLD);
     }
 
     ledc_update_duty(LEDC_LOW_SPEED_MODE, motor->chan_a);
@@ -97,7 +97,7 @@ void configure_pwm(ledc_channel_t channel, int gpio)
 #define PULSES_PER_ROTATION 30.0
 #define PULSES_TO_RAD(pulses)                                                  \
     (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
-#define PID_LOOP_PERIOD_MS 10.0 // 100 Hz
+#define PID_LOOP_PERIOD_MS 100.0
 
 void pid_callback(void *arg)
 {
@@ -106,9 +106,9 @@ void pid_callback(void *arg)
     int current_encoder_count;
     pcnt_unit_get_count(motor->encoder.unit, &current_encoder_count);
     int pulses_elapsed = current_encoder_count - motor->encoder.count;
-    motor->reported_speed =
-      PULSES_TO_RAD(pulses_elapsed) * (PID_LOOP_PERIOD_MS / 1000.0);
-    float error = motor->cmd_velocity - motor->reported_speed;
+    motor->reported_velocity =
+      PULSES_TO_RAD(pulses_elapsed) * (1000.0 / PID_LOOP_PERIOD_MS);
+    float error = motor->cmd_velocity - motor->reported_velocity;
 
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_power));
@@ -118,6 +118,7 @@ void pid_callback(void *arg)
 };
 
 void configure_motor(motor_handle_t *motor,
+                     char *motor_name,
                      gpio_num_t pwm_a_pin,
                      ledc_channel_t pwm_a_chan,
                      gpio_num_t pwm_b_pin,
@@ -150,10 +151,7 @@ void configure_motor(motor_handle_t *motor,
     ESP_ERROR_CHECK(pcnt_new_channel(
       motor->encoder.unit, &chan_config, &motor->encoder.channel));
 
-    ESP_ERROR_CHECK(
-      pcnt_channel_set_edge_action(motor->encoder.channel,
-                                   PCNT_CHANNEL_EDGE_ACTION_HOLD,
-                                   PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    // motor->cmd_velocity = 6 * M_PI;
 
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(motor->encoder.unit, INT16_MAX));
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(motor->encoder.unit, INT16_MIN));
@@ -164,14 +162,14 @@ void configure_motor(motor_handle_t *motor,
 
     // PID
     pid_ctrl_parameter_t pid_runtime_param = {
-        .kp = 0.6, // TODO: tune these (maybe make them uROS controlled?)
-        .ki = 0.4,
-        .kd = 0.2,
+        .kp = 0.015, // TODO: tune these (maybe make them uROS controlled?)
+        .ki = 0.015,
+        .kd = 0.00,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
         .max_output = 1.0,
         .min_output = -1.0,
-        .max_integral = 0.5,
-        .min_integral = -0.5,
+        .max_integral = 0.3,
+        .min_integral = -0.3,
     };
     pid_ctrl_block_handle_t pid_ctrl = NULL;
     pid_ctrl_config_t pid_config = {
@@ -180,11 +178,11 @@ void configure_motor(motor_handle_t *motor,
     ESP_ERROR_CHECK(pid_new_control_block(&pid_config, &pid_ctrl));
     motor->pid_controller = pid_ctrl;
 
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = pid_callback, .arg = motor, .name = "pid_loop"
-    };
+    motor->pid_args = (esp_timer_create_args_t){ .callback = pid_callback,
+                                                 .arg = motor,
+                                                 .name = motor_name };
     motor->pid_timer = NULL;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &motor->pid_timer));
+    ESP_ERROR_CHECK(esp_timer_create(&motor->pid_args, &motor->pid_timer));
     esp_timer_start_periodic(motor->pid_timer, PID_LOOP_PERIOD_MS * 1000);
 }
 
