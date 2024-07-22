@@ -388,12 +388,13 @@ void wifi_mgr_init()
 	ESP_LOGI(TAG, "ip_napt enabled");
 
 	/* Wait for Wi-Fi connection */
-	EventBits_t wifi_ret =
-	  xEventGroupWaitBits(s_wifi_event_group,
-						  WIFI_CONNECTED_BIT,
-						  false,
-						  true,
-						  WIFI_CONNECTION_TIMEOUT_MS / portTICK_PERIOD_MS);
+	TickType_t timeout = WIFI_CONNECTION_TIMEOUT_MS / portTICK_PERIOD_MS;
+	if (!provisioned) {
+		timeout = portMAX_DELAY;
+	}
+	EventBits_t wifi_ret = xEventGroupWaitBits(
+	  s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, timeout);
+
 	if (wifi_ret & WIFI_CONNECTED_BIT) {
 		ESP_LOGI(TAG, "Device is provisioned and connected.");
 	} else {
