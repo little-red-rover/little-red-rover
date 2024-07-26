@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "hal/gpio_types.h"
 #include "micro_ros_mgr.h"
 #include "motor_driver.h"
 #include "pub_sub_utils.h"
@@ -36,8 +37,10 @@
 #define RIGHT_MOTOR_PWM_B_PIN 7
 #define RIGHT_MOTOR_PWM_B_CHANNEL 3
 
-#define LEFT_ENCODER_PIN 4
-#define RIGHT_ENCODER_PIN 3
+#define LEFT_ENCODER_PIN_A 41
+#define LEFT_ENCODER_PIN_B 43
+#define RIGHT_ENCODER_PIN_A 12
+#define RIGHT_ENCODER_PIN_B 14
 
 static const char *TAG = "drive_base_driver";
 
@@ -75,7 +78,7 @@ void cmd_vel_callback(const void *msgin)
       (const geometry_msgs__msg__Twist *)msgin;
     double x = msg->angular.z;
     double y = msg->linear.x;
-    set_diff_drive(y + x, y - x);
+    set_diff_drive(clamp(y + x, -1.0, 1.0), clamp(y - x, -1.0, 1.0));
 }
 
 static void drive_base_driver_task(void *arg)
@@ -89,28 +92,30 @@ static void drive_base_driver_task(void *arg)
         int right_pulse_cnt;
         pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
         pcnt_unit_get_count(right_motor_handle.encoder.unit, &right_pulse_cnt);
-        // ESP_LOGI(TAG,
-        //          "Right encoder count %d, %d, %d",
-        //          right_motor_handle.encoder.count,
-        //          right_pulse_cnt,
-        //          gpio_get_level(RIGHT_ENCODER_PIN));
-        // ESP_LOGI(TAG,
-        //          "Left encoder count %d, %d, %d",
-        //          left_motor_handle.encoder.count,
-        //          left_pulse_cnt,
-        //          gpio_get_level(LEFT_ENCODER_PIN));
         ESP_LOGI(TAG,
-                 "Right %f, %f, %f, %d",
-                 right_motor_handle.cmd_velocity,
-                 right_motor_handle.reported_velocity,
-                 right_motor_handle.cmd_power,
-                 right_motor_handle.encoder.count);
+                 "Right encoder count %d, %d, %d, %d",
+                 right_motor_handle.encoder.count,
+                 right_pulse_cnt,
+                 gpio_get_level(RIGHT_ENCODER_PIN_A),
+                 gpio_get_level(RIGHT_ENCODER_PIN_B));
         ESP_LOGI(TAG,
-                 "Left %f, %f, %f, %d",
-                 left_motor_handle.cmd_velocity,
-                 left_motor_handle.reported_velocity,
-                 left_motor_handle.cmd_power,
-                 left_motor_handle.encoder.count);
+                 "Left encoder count %d, %d, %d, %d",
+                 left_motor_handle.encoder.count,
+                 left_pulse_cnt,
+                 gpio_get_level(LEFT_ENCODER_PIN_A),
+                 gpio_get_level(LEFT_ENCODER_PIN_B));
+        // ESP_LOGI(TAG,
+        //          "Right %f, %f, %f, %d",
+        //          right_motor_handle.cmd_velocity,
+        //          right_motor_handle.reported_velocity,
+        //          right_motor_handle.cmd_power,
+        //          right_motor_handle.encoder.count);
+        // ESP_LOGI(TAG,
+        //          "Left %f, %f, %f, %d",
+        //          left_motor_handle.cmd_velocity,
+        //          left_motor_handle.reported_velocity,
+        //          left_motor_handle.cmd_power,
+        //          left_motor_handle.encoder.count);
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
@@ -128,15 +133,21 @@ void drive_base_driver_init()
                     LEFT_MOTOR_PWM_A_CHANNEL,
                     LEFT_MOTOR_PWM_B_PIN,
                     LEFT_MOTOR_PWM_B_CHANNEL,
-                    LEFT_ENCODER_PIN);
+                    LEFT_ENCODER_PIN_A,
+                    LEFT_ENCODER_PIN_B);
     configure_motor(&right_motor_handle,
                     "right_motor",
                     RIGHT_MOTOR_PWM_A_PIN,
                     RIGHT_MOTOR_PWM_A_CHANNEL,
                     RIGHT_MOTOR_PWM_B_PIN,
                     RIGHT_MOTOR_PWM_B_CHANNEL,
-                    RIGHT_ENCODER_PIN);
+                    RIGHT_ENCODER_PIN_A,
+                    RIGHT_ENCODER_PIN_B);
 
+    gpio_dump_io_configuration(
+      stdout, (1ULL << LEFT_ENCODER_PIN_A) | (1ULL << LEFT_ENCODER_PIN_B));
+    gpio_dump_io_configuration(
+      stdout, (1ULL << RIGHT_ENCODER_PIN_A) | (1ULL << RIGHT_ENCODER_PIN_B));
     // MICRO ROS SETUP
     cmd_vel_msg = geometry_msgs__msg__Twist__create();
     cmd_vel_subscription = register_subscription(

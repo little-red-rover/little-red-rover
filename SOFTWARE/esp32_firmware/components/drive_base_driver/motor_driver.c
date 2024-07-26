@@ -32,9 +32,8 @@
 #include "pid_ctrl.h"
 
 #include <math.h>
-
-#define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
-#define PWM_FREQ_HZ 20000
+#define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT // #define PWM_FREQ_HZ 20000
+#define PWM_FREQ_HZ 4000
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -47,11 +46,6 @@ void set_motor_enabled(motor_handle_t *motor, bool enable)
     }
 }
 
-void set_motor_velocity(motor_handle_t *motor, float velocity)
-{
-    motor->cmd_velocity = velocity;
-}
-
 static void set_motor_power(motor_handle_t *motor, float power)
 {
     if (power > 0) {
@@ -59,26 +53,21 @@ static void set_motor_power(motor_handle_t *motor, float power)
                       motor->chan_b,
                       (uint32_t)(power * (float)(1 << PWM_TIMER_RESOLUTION)));
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_a, 0);
-        pcnt_channel_set_edge_action(motor->encoder.channel,
-                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-                                     PCNT_CHANNEL_EDGE_ACTION_INCREASE);
     } else {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_b, 0);
         ledc_set_duty(LEDC_LOW_SPEED_MODE,
                       motor->chan_a,
                       (uint32_t)(-power * (float)(1 << PWM_TIMER_RESOLUTION)));
-        pcnt_channel_set_edge_action(motor->encoder.channel,
-                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE,
-                                     PCNT_CHANNEL_EDGE_ACTION_DECREASE);
-    }
-    if (power == 0) {
-        // pcnt_channel_set_edge_action(motor->encoder.channel,
-        //                              PCNT_CHANNEL_EDGE_ACTION_HOLD,
-        //                              PCNT_CHANNEL_EDGE_ACTION_HOLD);
     }
 
     ledc_update_duty(LEDC_LOW_SPEED_MODE, motor->chan_a);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, motor->chan_b);
+}
+
+void set_motor_velocity(motor_handle_t *motor, float velocity)
+{
+    // motor->cmd_velocity = velocity;
+    set_motor_power(motor, velocity);
 }
 
 void configure_pwm(ledc_channel_t channel, int gpio)
@@ -97,7 +86,7 @@ void configure_pwm(ledc_channel_t channel, int gpio)
 #define PULSES_PER_ROTATION 30.0
 #define PULSES_TO_RAD(pulses)                                                  \
     (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
-#define PID_LOOP_PERIOD_MS 100.0
+#define PID_LOOP_PERIOD_MS 10.0
 
 void pid_callback(void *arg)
 {
@@ -112,7 +101,7 @@ void pid_callback(void *arg)
 
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_power));
-    set_motor_power(motor, motor->cmd_power);
+    // set_motor_power(motor, motor->cmd_power);
 
     motor->encoder.count = current_encoder_count;
 };
@@ -123,7 +112,8 @@ void configure_motor(motor_handle_t *motor,
                      ledc_channel_t pwm_a_chan,
                      gpio_num_t pwm_b_pin,
                      ledc_channel_t pwm_b_chan,
-                     gpio_num_t encoder_pin)
+                     gpio_num_t encoder_pin_a,
+                     gpio_num_t encoder_pin_b)
 {
     // PWM
     configure_pwm(pwm_a_chan, pwm_a_pin);
@@ -133,25 +123,44 @@ void configure_motor(motor_handle_t *motor,
     motor->chan_b = pwm_b_chan;
 
     // ENCODER
-    gpio_pullup_en(encoder_pin);
-
     pcnt_unit_config_t unit_config = { .low_limit = INT16_MIN,
                                        .high_limit = INT16_MAX,
                                        .flags = { .accum_count = 1 } };
 
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &motor->encoder.unit));
 
-    pcnt_glitch_filter_config_t filter_config = { .max_glitch_ns = 10000 };
+    pcnt_glitch_filter_config_t filter_config = { .max_glitch_ns = 1000 };
     ESP_ERROR_CHECK(
       pcnt_unit_set_glitch_filter(motor->encoder.unit, &filter_config));
 
-    pcnt_chan_config_t chan_config = {
-        .edge_gpio_num = encoder_pin,
-    };
+    pcnt_chan_config_t chan_config_a = { .edge_gpio_num = encoder_pin_a,
+                                         .level_gpio_num = encoder_pin_b };
     ESP_ERROR_CHECK(pcnt_new_channel(
-      motor->encoder.unit, &chan_config, &motor->encoder.channel));
+      motor->encoder.unit, &chan_config_a, &motor->encoder.channel_a));
+
+    pcnt_chan_config_t chan_config_b = { .edge_gpio_num = encoder_pin_b,
+                                         .level_gpio_num = encoder_pin_a };
+    ESP_ERROR_CHECK(pcnt_new_channel(
+      motor->encoder.unit, &chan_config_b, &motor->encoder.channel_b));
 
     // motor->cmd_velocity = 6 * M_PI;
+
+    ESP_ERROR_CHECK(
+      pcnt_channel_set_edge_action(motor->encoder.channel_a,
+                                   PCNT_CHANNEL_EDGE_ACTION_DECREASE,
+                                   PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+    ESP_ERROR_CHECK(
+      pcnt_channel_set_level_action(motor->encoder.channel_a,
+                                    PCNT_CHANNEL_LEVEL_ACTION_KEEP,
+                                    PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    ESP_ERROR_CHECK(
+      pcnt_channel_set_edge_action(motor->encoder.channel_b,
+                                   PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+                                   PCNT_CHANNEL_EDGE_ACTION_DECREASE));
+    ESP_ERROR_CHECK(
+      pcnt_channel_set_level_action(motor->encoder.channel_b,
+                                    PCNT_CHANNEL_LEVEL_ACTION_KEEP,
+                                    PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
 
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(motor->encoder.unit, INT16_MAX));
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(motor->encoder.unit, INT16_MIN));

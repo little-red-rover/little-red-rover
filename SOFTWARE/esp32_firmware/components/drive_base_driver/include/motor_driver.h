@@ -17,7 +17,8 @@
  */
 typedef struct
 {
-    pcnt_channel_handle_t channel;
+    pcnt_channel_handle_t channel_a;
+    pcnt_channel_handle_t channel_b;
     pcnt_unit_handle_t unit;
     int count;
 } encoder_handle_t;
@@ -74,7 +75,8 @@ void configure_motor(motor_handle_t *motor,
                      ledc_channel_t pwm_a_chan,
                      gpio_num_t pwm_b_pin,
                      ledc_channel_t pwm_b_chan,
-                     gpio_num_t encoder_pin);
+                     gpio_num_t encoder_pin_a,
+                     gpio_num_t encoder_pin_b);
 
 /*
  * Initialize the PWM peripheral for use with motors.
