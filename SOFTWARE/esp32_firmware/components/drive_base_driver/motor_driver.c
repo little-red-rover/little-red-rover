@@ -33,7 +33,11 @@
 
 #include <math.h>
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT // #define PWM_FREQ_HZ 20000
-#define PWM_FREQ_HZ 4000
+#define PWM_FREQ_HZ 25000
+
+// Minimum % duty that must be applied to affect any motion
+// Inputs below this level are ignored
+#define HYSTERESIS 0.35
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -66,8 +70,8 @@ static void set_motor_power(motor_handle_t *motor, float power)
 
 void set_motor_velocity(motor_handle_t *motor, float velocity)
 {
-    // motor->cmd_velocity = velocity;
-    set_motor_power(motor, velocity);
+    motor->cmd_velocity = velocity;
+    // set_motor_power(motor, velocity);
 }
 
 void configure_pwm(ledc_channel_t channel, int gpio)
@@ -83,7 +87,7 @@ void configure_pwm(ledc_channel_t channel, int gpio)
     ESP_ERROR_CHECK(ledc_channel_config(&pwm_channel));
 }
 
-#define PULSES_PER_ROTATION 30.0
+#define PULSES_PER_ROTATION 580.0
 #define PULSES_TO_RAD(pulses)                                                  \
     (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
 #define PID_LOOP_PERIOD_MS 10.0
@@ -101,7 +105,7 @@ void pid_callback(void *arg)
 
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_power));
-    // set_motor_power(motor, motor->cmd_power);
+    set_motor_power(motor, motor->cmd_power);
 
     motor->encoder.count = current_encoder_count;
 };
@@ -171,10 +175,10 @@ void configure_motor(motor_handle_t *motor,
 
     // PID
     pid_ctrl_parameter_t pid_runtime_param = {
-        .kp = 0.015, // TODO: tune these (maybe make them uROS controlled?)
-        .ki = 0.015,
+        .kp = 0.7, // TODO: tune these (maybe make them uROS controlled?)
+        .ki = 0.3,
         .kd = 0.00,
-        .cal_type = PID_CAL_TYPE_INCREMENTAL,
+        .cal_type = PID_CAL_TYPE_POSITIONAL,
         .max_output = 1.0,
         .min_output = -1.0,
         .max_integral = 0.3,
