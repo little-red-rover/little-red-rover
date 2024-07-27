@@ -1,3 +1,4 @@
+# Works well with my dualshock 4 controller
 teleop_twist_joy_node:
   ros__parameters:
     axis_linear:

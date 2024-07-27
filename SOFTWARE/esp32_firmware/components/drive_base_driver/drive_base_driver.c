@@ -1,7 +1,5 @@
 #include "drive_base_driver.h"
 
-#include "driver/gpio.h"
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -18,7 +16,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "hal/gpio_types.h"
 #include "micro_ros_mgr.h"
 #include "motor_driver.h"
 #include "pub_sub_utils.h"
@@ -93,18 +90,6 @@ static void drive_base_driver_task(void *arg)
         int right_pulse_cnt;
         pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
         pcnt_unit_get_count(right_motor_handle.encoder.unit, &right_pulse_cnt);
-        ESP_LOGI(TAG,
-                 "Right %f, %f, %f, %d",
-                 right_motor_handle.cmd_velocity,
-                 right_motor_handle.reported_velocity,
-                 right_motor_handle.cmd_power,
-                 right_motor_handle.encoder.count);
-        ESP_LOGI(TAG,
-                 "Left %f, %f, %f, %d",
-                 left_motor_handle.cmd_velocity,
-                 left_motor_handle.reported_velocity,
-                 left_motor_handle.cmd_power,
-                 left_motor_handle.encoder.count);
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);

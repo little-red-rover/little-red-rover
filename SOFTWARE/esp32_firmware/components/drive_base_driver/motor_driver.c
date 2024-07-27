@@ -32,12 +32,14 @@
 #include "pid_ctrl.h"
 
 #include <math.h>
-#define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT // #define PWM_FREQ_HZ 20000
+#define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
+
+// Anything above audible is fine
 #define PWM_FREQ_HZ 25000
 
 // Minimum % duty that must be applied to affect any motion
 // Inputs below this level are ignored
-#define HYSTERESIS 0.35
+#define HYSTERESIS 0.25
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -52,16 +54,19 @@ void set_motor_enabled(motor_handle_t *motor, bool enable)
 
 static void set_motor_power(motor_handle_t *motor, float power)
 {
-    if (power > 0) {
+    if (power > HYSTERESIS) {
         ledc_set_duty(LEDC_LOW_SPEED_MODE,
                       motor->chan_b,
                       (uint32_t)(power * (float)(1 << PWM_TIMER_RESOLUTION)));
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_a, 0);
-    } else {
+    } else if (power < HYSTERESIS) {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_b, 0);
         ledc_set_duty(LEDC_LOW_SPEED_MODE,
                       motor->chan_a,
                       (uint32_t)(-power * (float)(1 << PWM_TIMER_RESOLUTION)));
+    } else {
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_b, 0);
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, motor->chan_a, 0);
     }
 
     ledc_update_duty(LEDC_LOW_SPEED_MODE, motor->chan_a);
