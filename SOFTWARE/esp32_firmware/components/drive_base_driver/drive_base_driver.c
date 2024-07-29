@@ -1,5 +1,6 @@
 #include "drive_base_driver.h"
 
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -63,11 +64,6 @@ static void set_diff_drive(float left, float right)
     set_motor_velocity(&left_motor_handle, left);
     set_motor_velocity(&right_motor_handle, right);
 }
-float clamp(float d, float min, float max)
-{
-    const float t = d < min ? min : d;
-    return t > max ? max : t;
-}
 
 void cmd_vel_callback(const void *msgin)
 {
@@ -90,6 +86,30 @@ static void drive_base_driver_task(void *arg)
         int right_pulse_cnt;
         pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
         pcnt_unit_get_count(right_motor_handle.encoder.unit, &right_pulse_cnt);
+        // ESP_LOGI(TAG,
+        //          "Right encoder count %d, %d, %d, %d",
+        //          right_motor_handle.encoder.count,
+        //          right_pulse_cnt,
+        //          gpio_get_level(RIGHT_ENCODER_PIN_A),
+        //          gpio_get_level(RIGHT_ENCODER_PIN_B));
+        // ESP_LOGI(TAG,
+        //          "Left encoder count %d, %d, %d, %d",
+        //          left_motor_handle.encoder.count,
+        //          left_pulse_cnt,
+        //          gpio_get_level(LEFT_ENCODER_PIN_A),
+        //          gpio_get_level(LEFT_ENCODER_PIN_B));
+        // ESP_LOGI(TAG,
+        //          "Right %f, %f, %f, %d",
+        //          right_motor_handle.cmd_velocity,
+        //          right_motor_handle.reported_velocity,
+        //          right_motor_handle.cmd_power,
+        //          right_motor_handle.encoder.count);
+        // ESP_LOGI(TAG,
+        //          "Left %f, %f, %f, %d",
+        //          left_motor_handle.cmd_velocity,
+        //          left_motor_handle.reported_velocity,
+        //          left_motor_handle.cmd_power,
+        //          left_motor_handle.encoder.count);
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);

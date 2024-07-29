@@ -32,6 +32,7 @@
 #include "pid_ctrl.h"
 
 #include <math.h>
+#include <stdlib.h>
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
 
 // Anything above audible is fine
@@ -40,6 +41,16 @@
 // Minimum % duty that must be applied to affect any motion
 // Inputs below this level are ignored
 #define HYSTERESIS 0.25
+
+// Max change to motor power per pid cycle
+// Reduces current surges
+#define MAX_JERK 0.1
+
+#define PID_LOOP_PERIOD_MS 10.0
+
+#define PULSES_PER_ROTATION 580.0
+#define PULSES_TO_RAD(pulses)                                                  \
+    (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -92,10 +103,11 @@ void configure_pwm(ledc_channel_t channel, int gpio)
     ESP_ERROR_CHECK(ledc_channel_config(&pwm_channel));
 }
 
-#define PULSES_PER_ROTATION 580.0
-#define PULSES_TO_RAD(pulses)                                                  \
-    (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
-#define PID_LOOP_PERIOD_MS 10.0
+float clamp(float d, float min, float max)
+{
+    const float t = d < min ? min : d;
+    return t > max ? max : t;
+}
 
 void pid_callback(void *arg)
 {
@@ -110,7 +122,11 @@ void pid_callback(void *arg)
 
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_power));
-    set_motor_power(motor, motor->cmd_power);
+    motor->applied_power = clamp(motor->cmd_power,
+                                 motor->applied_power - MAX_JERK,
+                                 motor->applied_power + MAX_JERK);
+
+    set_motor_power(motor, motor->applied_power);
 
     motor->encoder.count = current_encoder_count;
 };
@@ -180,9 +196,9 @@ void configure_motor(motor_handle_t *motor,
 
     // PID
     pid_ctrl_parameter_t pid_runtime_param = {
-        .kp = 0.7, // TODO: tune these (maybe make them uROS controlled?)
+        .kp = 0.3, // TODO: tune these (maybe make them uROS controlled?)
         .ki = 0.3,
-        .kd = 0.00,
+        .kd = 0.0,
         .cal_type = PID_CAL_TYPE_POSITIONAL,
         .max_output = 1.0,
         .min_output = -1.0,

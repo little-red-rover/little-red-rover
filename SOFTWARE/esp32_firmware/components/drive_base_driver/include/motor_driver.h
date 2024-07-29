@@ -24,16 +24,6 @@ typedef struct
 } encoder_handle_t;
 
 /*
- * Get an encoders count.
- */
-static int get_encoder_count(encoder_handle_t encoder)
-{
-    int ret;
-    pcnt_unit_get_count(encoder.unit, &ret);
-    return ret;
-};
-
-/*
  * Represents a motor.
  */
 typedef struct
@@ -44,11 +34,17 @@ typedef struct
     float cmd_velocity;
     float reported_velocity;
     float cmd_power;
+    float applied_power;
     encoder_handle_t encoder;
     pid_ctrl_block_handle_t pid_controller;
     esp_timer_handle_t pid_timer;
     esp_timer_create_args_t pid_args;
 } motor_handle_t;
+
+/*
+ * Clamp a float value between two extremes.
+ */
+float clamp(float d, float min, float max);
 
 /*
  * Enable a motor.
