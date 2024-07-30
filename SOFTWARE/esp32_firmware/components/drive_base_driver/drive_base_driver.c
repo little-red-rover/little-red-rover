@@ -1,19 +1,21 @@
 #include "drive_base_driver.h"
 
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include <geometry_msgs/msg/detail/pose__struct.h>
+#include <nav_msgs/msg/detail/odometry__functions.h>
+#include <nav_msgs/msg/detail/odometry__struct.h>
 #include <rcl/rcl.h>
+#include <rcl/types.h>
 #include <rclc/executor_handle.h>
 
 #include <geometry_msgs/msg/detail/twist__functions.h>
 #include <geometry_msgs/msg/detail/twist__struct.h>
 #include <geometry_msgs/msg/twist.h>
-
-#include <sensor_msgs/msg/detail/joint_state__functions.h>
-#include <sensor_msgs/msg/detail/joint_state__struct.h>
-#include <sensor_msgs/msg/joint_state.h>
+#include <nav_msgs/msg/odometry.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -40,16 +42,22 @@
 #define RIGHT_ENCODER_PIN_A 12
 #define RIGHT_ENCODER_PIN_B 14
 
+// Both in meters
+#define WHEEL_DIAMETER 0.060960
+#define WHEEL_TRACK 0.11439
+
 static const char *TAG = "drive_base_driver";
 
-// SUBSCRIPTIONS
-static sensor_msgs__msg__JointState *joint_state_msg;
-static rcl_publisher_t *joint_state_publisher;
-
 // PUBLISHERS
+#define PUBLISHER_LOOP_PERIOD_MS 15
+static nav_msgs__msg__Odometry *odom_msg;
+static rcl_publisher_t *odom_publisher;
+
+// SUBSCRIPTIONS
 static geometry_msgs__msg__Twist *cmd_vel_msg;
 static rcl_subscription_t *cmd_vel_subscription;
 
+// MOTORS
 static motor_handle_t left_motor_handle;
 static motor_handle_t right_motor_handle;
 
@@ -69,10 +77,40 @@ void cmd_vel_callback(const void *msgin)
 {
     const geometry_msgs__msg__Twist *msg =
       (const geometry_msgs__msg__Twist *)msgin;
-    double x = msg->angular.z;
-    double y = msg->linear.x;
-    set_diff_drive(clamp(y - x, -1.0, 1.0) * 20.0,
-                   clamp(y + x, -1.0, 1.0) * 20.0);
+    double v = msg->linear.x;
+    double w = msg->angular.z;
+
+    // https://control.ros.org/master/doc/ros2_controllers/doc/mobile_robot_kinematics.html#differential-drive-robot
+    set_diff_drive((v - ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER),
+                   (v + ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER));
+}
+
+void odom_publish_timer_callback()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    odom_msg->header.stamp.sec = ts.tv_sec;
+    odom_msg->header.stamp.nanosec = ts.tv_nsec;
+    odom_msg->header.frame_id.data = "base_link";
+    odom_msg->header.frame_id.size = 9;
+    odom_msg->header.frame_id.capacity = 9;
+
+    odom_msg->child_frame_id.data = "base_link";
+    odom_msg->child_frame_id.size = 9;
+    odom_msg->child_frame_id.capacity = 9;
+
+    odom_msg->pose.pose.position =
+      (geometry_msgs__msg__Point){ .x = 0.0, .y = 0.0, .z = 0.0 };
+    odom_msg->pose.pose.orientation =
+      (geometry_msgs__msg__Quaternion){ .x = 0.0, .y = 0.0, .z = 0.0 };
+    // odom_msg.pose.covariance  { 0.0 } };
+
+    if (get_uros_state() == AGENT_CONNECTED) {
+        rcl_ret_t ret = rcl_publish(odom_publisher, odom_msg, NULL);
+        if (ret != RCL_RET_OK) {
+            ESP_LOGI(TAG, "Error publishing odom: %d.", (int)ret);
+        }
+    }
 }
 
 static void drive_base_driver_task(void *arg)
@@ -80,43 +118,6 @@ static void drive_base_driver_task(void *arg)
     while (get_uros_state() != AGENT_CONNECTED) {
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
-    set_drive_base_enabled(true);
-    while (1) {
-        int left_pulse_cnt;
-        int right_pulse_cnt;
-        pcnt_unit_get_count(left_motor_handle.encoder.unit, &left_pulse_cnt);
-        pcnt_unit_get_count(right_motor_handle.encoder.unit, &right_pulse_cnt);
-        // ESP_LOGI(TAG,
-        //          "Right encoder count %d, %d, %d, %d",
-        //          right_motor_handle.encoder.count,
-        //          right_pulse_cnt,
-        //          gpio_get_level(RIGHT_ENCODER_PIN_A),
-        //          gpio_get_level(RIGHT_ENCODER_PIN_B));
-        // ESP_LOGI(TAG,
-        //          "Left encoder count %d, %d, %d, %d",
-        //          left_motor_handle.encoder.count,
-        //          left_pulse_cnt,
-        //          gpio_get_level(LEFT_ENCODER_PIN_A),
-        //          gpio_get_level(LEFT_ENCODER_PIN_B));
-        // ESP_LOGI(TAG,
-        //          "Right %f, %f, %f, %d",
-        //          right_motor_handle.cmd_velocity,
-        //          right_motor_handle.reported_velocity,
-        //          right_motor_handle.cmd_power,
-        //          right_motor_handle.encoder.count);
-        // ESP_LOGI(TAG,
-        //          "Left %f, %f, %f, %d",
-        //          left_motor_handle.cmd_velocity,
-        //          left_motor_handle.reported_velocity,
-        //          left_motor_handle.cmd_power,
-        //          left_motor_handle.encoder.count);
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
-    vTaskDelete(NULL);
-}
-
-void drive_base_driver_init()
-{
     // PWM SETUP
     init_motor_pwm();
 
@@ -138,6 +139,24 @@ void drive_base_driver_init()
                     RIGHT_ENCODER_PIN_A,
                     RIGHT_ENCODER_PIN_B);
 
+    esp_timer_create_args_t pub_timer_args = { .callback =
+                                                 odom_publish_timer_callback,
+                                               .name = "odom_pubish_timer" };
+    esp_timer_handle_t pub_timer_handle;
+    ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
+    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
+
+    set_drive_base_enabled(true);
+
+    while (1) {
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
+}
+
+void drive_base_driver_init()
+{
     // MICRO ROS SETUP
     cmd_vel_msg = geometry_msgs__msg__Twist__create();
     cmd_vel_subscription = register_subscription(
@@ -146,10 +165,9 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    joint_state_msg = sensor_msgs__msg__JointState__create();
-    joint_state_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
-      "wheel_states");
+    odom_msg = nav_msgs__msg__Odometry__create();
+    odom_publisher = register_publisher(
+      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom");
 
     // START TASK
     xTaskCreate(drive_base_driver_task,

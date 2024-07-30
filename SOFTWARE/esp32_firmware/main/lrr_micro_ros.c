@@ -19,13 +19,13 @@
 
 void app_main(void)
 {
-	drive_base_driver_init();
+    drive_base_driver_init();
 
-	LSM6DS3_imu_driver_init();
+    LSM6DS3_imu_driver_init();
 
-	lidar_driver_init();
+    lidar_driver_init();
 
-	wifi_mgr_init();
+    wifi_mgr_init();
 
-	micro_ros_mgr_init();
+    micro_ros_mgr_init();
 }
