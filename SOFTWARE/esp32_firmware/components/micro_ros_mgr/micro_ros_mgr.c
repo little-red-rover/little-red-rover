@@ -146,11 +146,11 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
+    destroy_pub_sub(&node);
+
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
     RCCHECK(rmw_shutdown(&rmw_context));
-
-    destroy_pub_sub(&node);
     RCCHECK(rcl_node_fini(&node));
     RCCHECK(rcl_shutdown(&support.context));
     rclc_executor_fini(&executor);
@@ -175,7 +175,6 @@ void add_subscription_callback(rcl_subscription_t *subscription,
 void micro_ros_task(void *arg)
 {
     state = WAITING_AGENT;
-
     while (get_micro_ros_agent_ip() != ESP_OK) {
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
@@ -206,7 +205,7 @@ void micro_ros_task(void *arg)
                                                           : WAITING_AGENT;
                 if (state == WAITING_AGENT) {
                     ESP_LOGI(TAG, "Failed to create micro_ros structures.");
-                    // destroy_entities();
+                    destroy_entities();
                 };
                 break;
             case AGENT_CONNECTED:
@@ -237,6 +236,7 @@ void micro_ros_task(void *arg)
 
 void micro_ros_mgr_init()
 {
+
     // pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
     xTaskCreate(micro_ros_task,
                 "uros_task",

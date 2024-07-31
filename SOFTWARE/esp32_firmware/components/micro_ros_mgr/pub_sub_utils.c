@@ -6,15 +6,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include <rcl/node.h>
+#include <rcl/publisher.h>
 #include <rcl/rcl.h>
 #include <rcl/types.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 
-#include "drive_base_driver.h"
-#include "micro_ros_mgr.h"
-
 #include <rmw_microros/rmw_microros.h>
+#include <time.h>
 #include <uros_network_interfaces.h>
 
 #define RCCHECK(fn)                                                            \
@@ -27,15 +27,24 @@
             vTaskDelete(NULL);                                                 \
         }                                                                      \
     }
+#define RCSOFTCHECK(fn)                                                        \
+    {                                                                          \
+        rcl_ret_t temp_rc = fn;                                                \
+        if ((temp_rc != RCL_RET_OK)) {                                         \
+            printf("Failed status on line %d: %d. Continuing.\n",              \
+                   __LINE__,                                                   \
+                   (int)temp_rc);                                              \
+        }                                                                      \
+    }
 
 #define MAX_PUBLISHERS 10
 #define MAX_SUBSCRIBERS 10
 
-publisher_info *publishers[MAX_PUBLISHERS];
-size_t num_publishers = 0;
+static publisher_info *publishers[MAX_PUBLISHERS];
+static size_t num_publishers = 0;
 
-subscription_info *subscriptions[MAX_SUBSCRIBERS];
-size_t num_subscriptions = 0;
+static subscription_info *subscriptions[MAX_SUBSCRIBERS];
+static size_t num_subscriptions = 0;
 
 size_t get_num_subscriptions()
 {
@@ -47,6 +56,9 @@ rcl_publisher_t *register_publisher(
   const char *topic_name)
 {
     publishers[num_publishers] = malloc(sizeof(publisher_info));
+    if (publishers[num_publishers] == NULL) {
+        ESP_LOGE("uhoh", "Malloc failed");
+    }
     publishers[num_publishers]->publisher =
       rcl_get_zero_initialized_publisher();
     publishers[num_publishers]->type_support = type_support;
@@ -119,12 +131,13 @@ void destroy_pub_sub(rcl_node_t *node)
         ESP_LOGI("destroy_pub_sub",
                  "Destroying publisher %s",
                  (publishers[i]->topic_name));
-        RCCHECK(rcl_publisher_fini(&(publishers[i]->publisher), node));
+        RCSOFTCHECK(rcl_publisher_fini(&(publishers[i]->publisher), node));
     }
     for (size_t i = 0; i < num_subscriptions; i++) {
         ESP_LOGI("destroy_pub_sub",
                  "Destroying subscription %s",
                  subscriptions[i]->topic_name);
-        RCCHECK(rcl_subscription_fini(&(subscriptions[i]->subscription), node));
+        RCSOFTCHECK(
+          rcl_subscription_fini(&(subscriptions[i]->subscription), node));
     }
 }

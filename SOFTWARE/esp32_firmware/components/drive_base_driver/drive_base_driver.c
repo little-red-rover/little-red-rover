@@ -1,21 +1,18 @@
 #include "drive_base_driver.h"
 
-#include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include <geometry_msgs/msg/detail/pose__struct.h>
-#include <nav_msgs/msg/detail/odometry__functions.h>
-#include <nav_msgs/msg/detail/odometry__struct.h>
+#include <rcl/publisher.h>
 #include <rcl/rcl.h>
 #include <rcl/types.h>
 #include <rclc/executor_handle.h>
 
-#include <geometry_msgs/msg/detail/twist__functions.h>
-#include <geometry_msgs/msg/detail/twist__struct.h>
 #include <geometry_msgs/msg/twist.h>
 #include <nav_msgs/msg/odometry.h>
+#include <std_msgs/msg/int32.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -45,21 +42,45 @@
 // Both in meters
 #define WHEEL_DIAMETER 0.060960
 #define WHEEL_TRACK 0.11439
+#define RCCHECK(fn)                                                            \
+    {                                                                          \
+        rcl_ret_t temp_rc = fn;                                                \
+        if ((temp_rc != RCL_RET_OK)) {                                         \
+            printf("Failed status on line %d: %d. Aborting.\n",                \
+                   __LINE__,                                                   \
+                   (int)temp_rc);                                              \
+            vTaskDelete(NULL);                                                 \
+        }                                                                      \
+    }
+#define RCSOFTCHECK(fn)                                                        \
+    {                                                                          \
+        rcl_ret_t temp_rc = fn;                                                \
+        if ((temp_rc != RCL_RET_OK)) {                                         \
+            printf("Failed status on line %d: %d. Continuing.\n",              \
+                   __LINE__,                                                   \
+                   (int)temp_rc);                                              \
+        }                                                                      \
+    }
 
 static const char *TAG = "drive_base_driver";
 
 // PUBLISHERS
 #define PUBLISHER_LOOP_PERIOD_MS 15
-static nav_msgs__msg__Odometry *odom_msg;
-static rcl_publisher_t *odom_publisher;
+
+nav_msgs__msg__Odometry *odom_msg;
+rcl_publisher_t *odom_publisher;
+
+std_msgs__msg__Int32 *int32_msg;
+rcl_publisher_t *int_publisher;
 
 // SUBSCRIPTIONS
-static geometry_msgs__msg__Twist *cmd_vel_msg;
-static rcl_subscription_t *cmd_vel_subscription;
+geometry_msgs__msg__Twist *cmd_vel_msg;
+rcl_subscription_t *cmd_vel_subscription;
+#include <std_msgs/msg/detail/int32__functions.h>
 
 // MOTORS
-static motor_handle_t left_motor_handle;
-static motor_handle_t right_motor_handle;
+motor_handle_t left_motor_handle;
+motor_handle_t right_motor_handle;
 
 static void set_drive_base_enabled(bool enable)
 {
@@ -92,25 +113,29 @@ void odom_publish_timer_callback()
     odom_msg->header.stamp.sec = ts.tv_sec;
     odom_msg->header.stamp.nanosec = ts.tv_nsec;
     odom_msg->header.frame_id.data = "base_link";
-    odom_msg->header.frame_id.size = 9;
-    odom_msg->header.frame_id.capacity = 9;
+    odom_msg->header.frame_id.size = 10;
+    odom_msg->header.frame_id.capacity = 10;
 
     odom_msg->child_frame_id.data = "base_link";
-    odom_msg->child_frame_id.size = 9;
-    odom_msg->child_frame_id.capacity = 9;
+    odom_msg->child_frame_id.size = 10;
+    odom_msg->child_frame_id.capacity = 10;
 
-    odom_msg->pose.pose.position =
-      (geometry_msgs__msg__Point){ .x = 0.0, .y = 0.0, .z = 0.0 };
-    odom_msg->pose.pose.orientation =
-      (geometry_msgs__msg__Quaternion){ .x = 0.0, .y = 0.0, .z = 0.0 };
-    // odom_msg.pose.covariance  { 0.0 } };
-
-    if (get_uros_state() == AGENT_CONNECTED) {
-        rcl_ret_t ret = rcl_publish(odom_publisher, odom_msg, NULL);
-        if (ret != RCL_RET_OK) {
-            ESP_LOGI(TAG, "Error publishing odom: %d.", (int)ret);
-        }
-    }
+    // odom_msg->pose.pose.position =
+    //   (geometry_msgs__msg__Point){ .x = 0.0, .y = 0.0, .z = 0.0 };
+    // odom_msg->pose.pose.orientation =
+    //   (geometry_msgs__msg__Quaternion){ .x = 0.0, .y = 0.0, .z = 0.0 };
+    // // odom_msg.pose.covariance  { 0.0 } };
+    // odom_msg->twist.twist = (geometry_msgs__msg__Twist){ .linear.x = 0,
+    //                                                      .linear.y = 0,
+    //                                                      .linear.z = 0,
+    //                                                      .angular.x = 0,
+    //                                                      .angular.y = 0,
+    //                                                      .angular.z = 0
+    //                                                      };
+    //
+    // if (get_uros_state() == AGENT_CONNECTED) {
+    //     RCSOFTCHECK(rcl_publish(odom_publisher, odom_msg, NULL));
+    // }
 }
 
 static void drive_base_driver_task(void *arg)
@@ -144,11 +169,16 @@ static void drive_base_driver_task(void *arg)
                                                .name = "odom_pubish_timer" };
     esp_timer_handle_t pub_timer_handle;
     ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
-    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
+    // esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS *
+    // 1000);
 
     set_drive_base_enabled(true);
 
     while (1) {
+        if (get_uros_state() == AGENT_CONNECTED) {
+            int32_msg->data++;
+            RCSOFTCHECK(rcl_publish(int_publisher, int32_msg, NULL));
+        }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
@@ -165,9 +195,13 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    odom_msg = nav_msgs__msg__Odometry__create();
-    odom_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom");
+    // odom_msg = nav_msgs__msg__Odometry__create();
+    // odom_publisher = register_publisher(
+    //   ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom_testing");
+
+    int32_msg = std_msgs__msg__Int32__create();
+    int_publisher = register_publisher(
+      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "int32_testing");
 
     // START TASK
     xTaskCreate(drive_base_driver_task,

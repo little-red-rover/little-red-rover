@@ -3,12 +3,9 @@
 
 #include "driver/gpio.h"
 #include "driver/uart.h"
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
-#include "sdkconfig.h"
-#include "sensor_msgs/msg/laser_scan.h"
 #include <sensor_msgs/msg/detail/laser_scan__functions.h>
 #include <stdio.h>
 #include <time.h>
@@ -99,7 +96,6 @@ float intensities[POINT_PER_PACK];
 
 rcl_ret_t publish_scan(const LiDARFrame *scan)
 {
-
     scan_msg->angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
     scan_msg->angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
     if (scan_msg->angle_max < scan_msg->angle_min) {
@@ -120,6 +116,11 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
     scan_msg->intensities.data = (float *)&intensities;
     scan_msg->intensities.capacity = POINT_PER_PACK;
     scan_msg->intensities.size = POINT_PER_PACK;
+
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    scan_msg->header.stamp.sec = ts.tv_sec;
+    scan_msg->header.stamp.nanosec = ts.tv_nsec;
 
     return rcl_publish(lidar_publisher, scan_msg, NULL);
 }
@@ -148,13 +149,9 @@ static void lidar_driver_task(void *arg)
     ESP_ERROR_CHECK(uart_set_pin(
       LIDAR_UART_PORT_NUM, LIDAR_TXD, LIDAR_RXD, LIDAR_RTS, LIDAR_CTS));
 
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    scan_msg->header.stamp.sec = ts.tv_sec;
-    scan_msg->header.stamp.nanosec = ts.tv_nsec;
     scan_msg->header.frame_id.data = "lidar_frame";
-    scan_msg->header.frame_id.size = 11;
-    scan_msg->header.frame_id.capacity = 11;
+    scan_msg->header.frame_id.size = 12;
+    scan_msg->header.frame_id.capacity = 12;
 
     // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg->scan_time = 0.001;
@@ -169,9 +166,6 @@ static void lidar_driver_task(void *arg)
           LIDAR_UART_PORT_NUM, &start_chars, 1, 20 / portTICK_PERIOD_MS);
         // Look for start bytes, 0x54 0x2C
         if (start_chars[1] != HEADER || start_chars[0] != VERLEN) {
-            // ESP_LOGI(
-            //   TAG, "Got start chars: %d, %d", start_chars[0],
-            //   start_chars[1]);
             start_chars[1] = start_chars[0];
             continue;
         }
