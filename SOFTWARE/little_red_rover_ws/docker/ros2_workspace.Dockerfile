@@ -15,7 +15,7 @@ RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pk
 	apt-get install -y --no-install-recommends ros-$ROS_DISTRO-ros-gz
 
 # By default gazebo calculates lidar data using the GPU, but GPU operations aren't possible cross platform in Docker.
-# Setting this ENV variable causes it to be calculated on the CPU, but slower.
+# Setting this ENV variable causes it to be calculated on the CPU.
 # https://github.com/gazebosim/gz-sensors/issues/26
 RUN echo "export LIBGL_ALWAYS_SOFTWARE=true" >> /ros2_setup.bash
 
@@ -40,14 +40,7 @@ COPY ../src /little_red_rover_ws/src
 
 WORKDIR /little_red_rover_ws
 
-RUN apt update && \
-	apt-get install -y --no-install-recommends \ 
-	ros-${ROS_DISTRO}-rosbridge-server \
-	ros-${ROS_DISTRO}-ros2-control \
-	ros-${ROS_DISTRO}-ros2-controllers \
-	ros-${ROS_DISTRO}-controller-manager \
-	ros-${ROS_DISTRO}-xacro \
-	ros-${ROS_DISTRO}-teleop-twist-joy && \
+RUN apt-get update && \
 	rosdep update && \ 
 	rosdep install --from-paths src --ignore-src -y 
 
@@ -59,6 +52,7 @@ RUN apt-get update && \
 RUN source /ros2_setup.bash && colcon build
 RUN echo "source /little_red_rover_ws/install/local_setup.bash" >> /ros2_setup.bash
 
+RUN echo "alias lrr_install='(cd /little_red_rover_ws && rosdep update && rosdep install --from-paths src --ignore-src -y)'" >> /root/.bashrc
 RUN echo "alias lrr_build='(cd /little_red_rover_ws && colcon build --symlink-install)'" >> /root/.bashrc
 RUN echo "alias lrr_run='ros2 launch little_red_rover lrr.launch.py'" >> /root/.bashrc
 RUN echo "alias lrr_connect='. /tools/wifi_auth.bash'" >> /root/.bashrc
