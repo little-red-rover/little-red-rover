@@ -2,10 +2,10 @@
     "names": {
         "rmw_microxrcedds": {
             "cmake-args": [
-				"-DRMW_UXRCE_MAX_PUBLISHERS=4"
+                "-DRMW_UXRCE_MAX_PUBLISHERS=4"
             ]
         },
-		 "embeddedrtps": {
+         "embeddedrtps": {
             "cmake-args": [
                 "-DERTPS_MAX_PUBLISHERS=4"
             ]
