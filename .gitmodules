@@ -1,4 +1,4 @@
 [submodule "SOFTWARE/esp32_firmware/components/micro_ros_espidf_component"]
 	path = SOFTWARE/esp32_firmware/components/micro_ros_espidf_component
 	url = https://github.com/micro-ROS/micro_ros_espidf_component.git
-	branch = jazzy
+	branch = humble
