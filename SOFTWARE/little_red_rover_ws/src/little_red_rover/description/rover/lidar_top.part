@@ -1,13 +1,13 @@
 {
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
-    "documentMicroversion": "5ed13a8fa1920b562b3d9223",
+    "documentMicroversion": "2cc458918c9e820217e6da70",
     "elementId": "372d27b8e90a75028e0b67d5",
     "fullConfiguration": "default",
-    "id": "MyoKaV8KGbSfadzsz",
+    "id": "Moj8wtOFubzorHJfF",
     "isStandardContent": false,
-    "name": "lidar_top <1>",
-    "partId": "JLD",
+    "name": "lidar_top <2>",
+    "partId": "JMD",
     "suppressed": false,
     "type": "Part"
 }

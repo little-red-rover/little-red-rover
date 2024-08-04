@@ -1,6 +1,7 @@
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import (
@@ -110,4 +111,21 @@ def generate_launch_description():
         ),
     ]
 
-    return LaunchDescription(config + robot_launch + diff_drive + teleop)
+    # VISUALIZATION
+    visualization = [
+        IncludeLaunchDescription(
+            XMLLaunchDescriptionSource(
+                [
+                    get_package_share_directory("foxglove_bridge"),
+                    "/launch/foxglove_bridge_launch.xml",
+                ]
+            ),
+            launch_arguments={
+                "port": "8765",
+            }.items(),
+        ),
+    ]
+
+    return LaunchDescription(
+        config + robot_launch + diff_drive + teleop + visualization
+    )

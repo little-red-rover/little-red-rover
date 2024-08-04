@@ -1,13 +1,13 @@
 {
     "configuration": "default",
     "documentId": "3c9bcb798eb55dc89c3300c0",
-    "documentMicroversion": "5ed13a8fa1920b562b3d9223",
-    "elementId": "372d27b8e90a75028e0b67d5",
+    "documentMicroversion": "2cc458918c9e820217e6da70",
+    "elementId": "392193b9fa08a6df87ce3e96",
     "fullConfiguration": "default",
-    "id": "MjdS68JcqduTlv/Wp",
+    "id": "MtHkEGOReIhbOBhml",
     "isStandardContent": false,
     "name": "motor_mount_shim <2>",
-    "partId": "JxD",
+    "partId": "J7D",
     "suppressed": false,
     "type": "Part"
 }

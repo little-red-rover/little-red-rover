@@ -14,17 +14,4 @@ services:
             - "9002:9002" # gzweb
             - "9090:9090" # rosbridge
             - "8001:8001/udp" # microros agent -> rover
-    foxglove_bridge:
-        image: foxglove_bridge
-        build:
-            context: ../
-            dockerfile: docker/foxglove_bridge.Dockerfile
-        ports:
-            - "8765:8765"
-    urdf_server:
-        image: nginx:alpine
-        volumes:
-            - ../src/little_red_rover/description/rover:/usr/share/nginx/html
-            - ./nginx.conf:/etc/nginx/nginx.conf
-        ports:
-          - "8100:80"
+            - "8765:8765" # foxglove bridge

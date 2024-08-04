@@ -4,10 +4,10 @@
     "documentMicroversion": "2cc458918c9e820217e6da70",
     "elementId": "372d27b8e90a75028e0b67d5",
     "fullConfiguration": "default",
-    "id": "MeSp1Zp5+HN+6mCU8",
+    "id": "Mv/wXNLd48yLQM5KP",
     "isStandardContent": false,
-    "name": "pcb <2>",
-    "partId": "JYD",
+    "name": "motor_attachment_shim <1>",
+    "partId": "JlD",
     "suppressed": false,
     "type": "Part"
 }
