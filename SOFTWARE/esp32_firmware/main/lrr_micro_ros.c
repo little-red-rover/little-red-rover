@@ -1,3 +1,5 @@
+#include <nav_msgs/msg/detail/odometry__functions.h>
+#include <nav_msgs/msg/detail/odometry__struct.h>
 #include <rcl/publisher.h>
 #include <rcl/types.h>
 #include <std_msgs/msg/detail/int32__struct.h>
@@ -45,17 +47,17 @@ void app_main(void)
 
     // drive_base_driver_init();
 
-    // lidar_driver_init();
+    lidar_driver_init();
 
     wifi_mgr_init();
 
+    // This has got to be allocating memory incorrectly
+    nav_msgs__msg__Odometry *odom_msg = nav_msgs__msg__Odometry__create();
     std_msgs__msg__Int32 int32_msg;
-    rcl_publisher_t *int_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "int32_testing");
+    rcl_publisher_t *odom_publisher = register_publisher(
+      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom_ig");
     rcl_publisher_t *int2_publisher = register_publisher(
       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "int32_testing2");
-    rcl_publisher_t *int3_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "int32_testing3");
     micro_ros_mgr_init();
 
     while (get_uros_state() != AGENT_CONNECTED) {
@@ -65,10 +67,8 @@ void app_main(void)
     while (1) {
         ESP_LOGI(":(", ":( before");
         int32_msg.data++;
-        RCCHECK(rcl_publish(int_publisher, &int32_msg, NULL));
         RCCHECK(rcl_publish(int2_publisher, &int32_msg, NULL));
-        RCCHECK(rcl_publish(int3_publisher, &int32_msg, NULL));
-        ESP_LOGI(":(", ":( after");
+        // RCCHECK(rcl_publish(odom_publisher, odom_msg, NULL));
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }

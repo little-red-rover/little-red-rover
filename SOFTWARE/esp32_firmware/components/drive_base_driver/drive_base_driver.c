@@ -65,13 +65,10 @@
 static const char *TAG = "drive_base_driver";
 
 // PUBLISHERS
-#define PUBLISHER_LOOP_PERIOD_MS 15
+#define PUBLISHER_LOOP_PERIOD_MS 100
 
 nav_msgs__msg__Odometry *odom_msg;
 rcl_publisher_t *odom_publisher;
-
-std_msgs__msg__Int32 *int32_msg;
-rcl_publisher_t *int_publisher;
 
 // SUBSCRIPTIONS
 geometry_msgs__msg__Twist *cmd_vel_msg;
@@ -133,9 +130,9 @@ void odom_publish_timer_callback()
     //                                                      .angular.z = 0
     //                                                      };
     //
-    // if (get_uros_state() == AGENT_CONNECTED) {
-    //     RCSOFTCHECK(rcl_publish(odom_publisher, odom_msg, NULL));
-    // }
+    if (get_uros_state() == AGENT_CONNECTED) {
+        RCSOFTCHECK(rcl_publish(odom_publisher, odom_msg, NULL));
+    }
 }
 
 static void drive_base_driver_task(void *arg)
@@ -169,16 +166,11 @@ static void drive_base_driver_task(void *arg)
                                                .name = "odom_pubish_timer" };
     esp_timer_handle_t pub_timer_handle;
     ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
-    // esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS *
-    // 1000);
+    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
 
     set_drive_base_enabled(true);
 
     while (1) {
-        if (get_uros_state() == AGENT_CONNECTED) {
-            int32_msg->data++;
-            RCSOFTCHECK(rcl_publish(int_publisher, int32_msg, NULL));
-        }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
@@ -195,13 +187,9 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    // odom_msg = nav_msgs__msg__Odometry__create();
-    // odom_publisher = register_publisher(
-    //   ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom_testing");
-
-    int32_msg = std_msgs__msg__Int32__create();
-    int_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "int32_testing");
+    odom_msg = nav_msgs__msg__Odometry__create();
+    odom_publisher = register_publisher(
+      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom_testing");
 
     // START TASK
     xTaskCreate(drive_base_driver_task,

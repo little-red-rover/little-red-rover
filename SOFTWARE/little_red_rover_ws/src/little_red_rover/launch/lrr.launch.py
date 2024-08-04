@@ -74,12 +74,6 @@ def generate_launch_description():
 
     diff_drive = [
         Node(
-            package="controller_manager",
-            executable="ros2_control_node",
-            parameters=[robot_controllers],
-            output="both",
-        ),
-        Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
             output="both",
@@ -91,24 +85,6 @@ def generate_launch_description():
             ],
             remappings=[
                 ("/diff_drive_controller/cmd_vel_unstamped", "/cmd_vel"),
-            ],
-        ),
-        Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=[
-                "joint_state_broadcaster",
-                "--controller-manager",
-                "/controller_manager",
-            ],
-        ),
-        Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=[
-                "diffbot_base_controller",
-                "--controller-manager",
-                "/controller_manager",
             ],
         ),
     ]
