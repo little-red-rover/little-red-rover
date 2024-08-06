@@ -20,8 +20,8 @@ typedef struct
     pcnt_channel_handle_t channel_a;
     pcnt_channel_handle_t channel_b;
     pcnt_unit_handle_t unit;
-    float velocity; // rad / s
-    float position; // rad
+    double velocity; // rad / s
+    double position; // rad
     int count;
 } encoder_handle_t;
 
@@ -33,7 +33,7 @@ typedef struct
     ledc_channel_t chan_a;
     ledc_channel_t chan_b;
     gpio_num_t enable_pin;
-    float cmd_velocity;
+    double cmd_velocity;
     float cmd_effort;
     float applied_effort;
     encoder_handle_t encoder;
@@ -41,11 +41,6 @@ typedef struct
     esp_timer_handle_t pid_timer;
     esp_timer_create_args_t pid_args;
 } motor_handle_t;
-
-/*
- * Clamp a float value between two extremes.
- */
-float clamp(float d, float min, float max);
 
 /*
  * Enable a motor.

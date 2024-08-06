@@ -1,5 +1,6 @@
 #include "drive_base_driver.h"
 
+#include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,19 +27,19 @@
 // PIN DEFINITIONS
 #define MOTOR_ENABLE 5
 
-#define LEFT_MOTOR_PWM_A_PIN 6
+#define LEFT_MOTOR_PWM_A_PIN 7
 #define LEFT_MOTOR_PWM_A_CHANNEL 0
-#define LEFT_MOTOR_PWM_B_PIN 7
+#define LEFT_MOTOR_PWM_B_PIN 6
 #define LEFT_MOTOR_PWM_B_CHANNEL 1
 #define RIGHT_MOTOR_PWM_A_PIN 8
 #define RIGHT_MOTOR_PWM_A_CHANNEL 2
 #define RIGHT_MOTOR_PWM_B_PIN 9
 #define RIGHT_MOTOR_PWM_B_CHANNEL 3
 
-#define LEFT_ENCODER_PIN_A 43
-#define LEFT_ENCODER_PIN_B 41
-#define RIGHT_ENCODER_PIN_A 12
-#define RIGHT_ENCODER_PIN_B 14
+#define LEFT_ENCODER_PIN_A 14
+#define LEFT_ENCODER_PIN_B 13
+#define RIGHT_ENCODER_PIN_A 3
+#define RIGHT_ENCODER_PIN_B 4
 
 // Both in meters
 #define WHEEL_DIAMETER 0.060960
@@ -104,30 +105,21 @@ void cmd_vel_callback(const void *msgin)
                    (v + ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER));
 }
 
-void odom_publish_timer_callback()
+void wheel_state_publish_timer_callback()
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     wheel_state_msg->header.stamp.sec = ts.tv_sec;
     wheel_state_msg->header.stamp.nanosec = ts.tv_nsec;
 
-    // wheel_state_msg->child_frame_id.data = "base_link";
-    // wheel_state_msg->child_frame_id.size = 10;
-    // wheel_state_msg->child_frame_id.capacity = 10;
+    wheel_state_msg->position.data[0] = left_motor_handle.encoder.position;
+    wheel_state_msg->velocity.data[0] = left_motor_handle.encoder.velocity;
+    wheel_state_msg->effort.data[0] = left_motor_handle.applied_effort;
 
-    // odom_msg->pose.pose.position =
-    //   (geometry_msgs__msg__Point){ .x = 0.0, .y = 0.0, .z = 0.0 };
-    // odom_msg->pose.pose.orientation =
-    //   (geometry_msgs__msg__Quaternion){ .x = 0.0, .y = 0.0, .z = 0.0 };
-    // // odom_msg.pose.covariance  { 0.0 } };
-    // odom_msg->twist.twist = (geometry_msgs__msg__Twist){ .linear.x = 0,
-    //                                                      .linear.y = 0,
-    //                                                      .linear.z = 0,
-    //                                                      .angular.x = 0,
-    //                                                      .angular.y = 0,
-    //                                                      .angular.z = 0
-    //                                                      };
-    //
+    wheel_state_msg->position.data[1] = right_motor_handle.encoder.position;
+    wheel_state_msg->velocity.data[1] = right_motor_handle.encoder.velocity;
+    wheel_state_msg->effort.data[1] = right_motor_handle.applied_effort;
+
     if (get_uros_state() == AGENT_CONNECTED) {
         RCSOFTCHECK(rcl_publish(wheel_state_publisher, wheel_state_msg, NULL));
     }
@@ -159,9 +151,10 @@ static void drive_base_driver_task(void *arg)
                     RIGHT_ENCODER_PIN_A,
                     RIGHT_ENCODER_PIN_B);
 
-    esp_timer_create_args_t pub_timer_args = { .callback =
-                                                 odom_publish_timer_callback,
-                                               .name = "odom_pubish_timer" };
+    esp_timer_create_args_t pub_timer_args = {
+        .callback = wheel_state_publish_timer_callback,
+        .name = "wheel_state_publish_timer"
+    };
     esp_timer_handle_t pub_timer_handle;
     ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
     // esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS *
@@ -186,16 +179,36 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    wheel_state_msg = sensor_msgs__msg__JointState__create();
-
-    wheel_state_msg->header.frame_id.data = "base_link";
-    wheel_state_msg->header.frame_id.size = 9;
-    wheel_state_msg->header.frame_id.capacity = 9;
-
-    wheel_state_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
-      "wheel_states");
-
+    // wheel_state_msg = sensor_msgs__msg__JointState__create();
+    //
+    // wheel_state_msg->header.frame_id.data = "base_link";
+    // wheel_state_msg->header.frame_id.size = 9;
+    // wheel_state_msg->header.frame_id.capacity = 9;
+    //
+    // wheel_state_msg->name.size = 2;
+    // wheel_state_msg->name.capacity = 2;
+    //
+    // wheel_state_msg->name.data[0].data = "wheel_left";
+    // wheel_state_msg->name.data[0].size = 10;
+    // wheel_state_msg->name.data[0].capacity = 10;
+    //
+    // wheel_state_msg->name.data[1].data = "wheel_right";
+    // wheel_state_msg->name.data[1].size = 11;
+    // wheel_state_msg->name.data[1].capacity = 11;
+    //
+    // wheel_state_msg->position.size = 2;
+    // wheel_state_msg->position.capacity = 2;
+    //
+    // wheel_state_msg->velocity.size = 2;
+    // wheel_state_msg->velocity.capacity = 2;
+    //
+    // wheel_state_msg->effort.size = 2;
+    // wheel_state_msg->effort.capacity = 2;
+    //
+    // wheel_state_publisher = register_publisher(
+    //   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
+    //   "wheel_states");
+    //
     // START TASK
     xTaskCreate(drive_base_driver_task,
                 "drive_base_driver_task",

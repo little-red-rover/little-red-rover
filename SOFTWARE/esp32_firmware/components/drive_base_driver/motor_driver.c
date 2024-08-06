@@ -1,7 +1,6 @@
 /*
  * Motor control rountines for LRR.
- * Closed loop velocity control for TT Motors, using an encoder with no
- * direction information.
+ * Closed loop velocity control for TT Motors with an encoder.
  *
  * References
  *
@@ -87,7 +86,6 @@ static void set_motor_power(motor_handle_t *motor, float power)
 void set_motor_velocity(motor_handle_t *motor, float velocity)
 {
     motor->cmd_velocity = velocity;
-    // set_motor_power(motor, velocity);
 }
 
 void configure_pwm(ledc_channel_t channel, int gpio)
@@ -103,10 +101,15 @@ void configure_pwm(ledc_channel_t channel, int gpio)
     ESP_ERROR_CHECK(ledc_channel_config(&pwm_channel));
 }
 
-float clamp(float d, float min, float max)
+double clamp(float d, float min, float max)
 {
     const float t = d < min ? min : d;
     return t > max ? max : t;
+}
+
+double mod(double a, double b)
+{
+    return a - ((int)(a / b)) * b;
 }
 
 void pid_callback(void *arg)
@@ -118,10 +121,12 @@ void pid_callback(void *arg)
     int pulses_elapsed = current_encoder_count - motor->encoder.count;
     motor->encoder.velocity =
       PULSES_TO_RAD(pulses_elapsed) * (1000.0 / PID_LOOP_PERIOD_MS);
-    float error = motor->cmd_velocity - motor->encoder.velocity;
+    motor->encoder.position = mod(PULSES_TO_RAD(pulses_elapsed), (2.0 * M_PI));
+    double error = motor->cmd_velocity - motor->encoder.velocity;
 
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_effort));
+
     motor->applied_effort = clamp(motor->cmd_effort,
                                   motor->applied_effort - MAX_JERK,
                                   motor->applied_effort + MAX_JERK);
@@ -167,8 +172,6 @@ void configure_motor(motor_handle_t *motor,
                                          .level_gpio_num = encoder_pin_a };
     ESP_ERROR_CHECK(pcnt_new_channel(
       motor->encoder.unit, &chan_config_b, &motor->encoder.channel_b));
-
-    // motor->cmd_velocity = 6 * M_PI;
 
     ESP_ERROR_CHECK(
       pcnt_channel_set_edge_action(motor->encoder.channel_a,

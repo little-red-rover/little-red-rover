@@ -200,8 +200,9 @@ void lidar_driver_init()
 
     scan_msg = sensor_msgs__msg__LaserScan__create();
     lidar_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan), "scan");
-
+      (const rosidl_message_type_support_t *)ROSIDL_GET_MSG_TYPE_SUPPORT(
+        sensor_msgs, msg, LaserScan),
+      "scan");
     xTaskCreate(lidar_driver_task,
                 "lidar_driver_task",
                 LIDAR_TASK_STACK_SIZE,
