@@ -150,8 +150,8 @@ static void lidar_driver_task(void *arg)
       LIDAR_UART_PORT_NUM, LIDAR_TXD, LIDAR_RXD, LIDAR_RTS, LIDAR_CTS));
 
     scan_msg->header.frame_id.data = "lidar_frame";
-    scan_msg->header.frame_id.size = 12;
-    scan_msg->header.frame_id.capacity = 12;
+    scan_msg->header.frame_id.size = 11;
+    scan_msg->header.frame_id.capacity = 11;
 
     // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg->scan_time = 0.001;

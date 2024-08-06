@@ -116,17 +116,17 @@ void pid_callback(void *arg)
     int current_encoder_count;
     pcnt_unit_get_count(motor->encoder.unit, &current_encoder_count);
     int pulses_elapsed = current_encoder_count - motor->encoder.count;
-    motor->reported_velocity =
+    motor->encoder.velocity =
       PULSES_TO_RAD(pulses_elapsed) * (1000.0 / PID_LOOP_PERIOD_MS);
-    float error = motor->cmd_velocity - motor->reported_velocity;
+    float error = motor->cmd_velocity - motor->encoder.velocity;
 
     ESP_ERROR_CHECK(
-      pid_compute(motor->pid_controller, error, &motor->cmd_power));
-    motor->applied_power = clamp(motor->cmd_power,
-                                 motor->applied_power - MAX_JERK,
-                                 motor->applied_power + MAX_JERK);
+      pid_compute(motor->pid_controller, error, &motor->cmd_effort));
+    motor->applied_effort = clamp(motor->cmd_effort,
+                                  motor->applied_effort - MAX_JERK,
+                                  motor->applied_effort + MAX_JERK);
 
-    set_motor_power(motor, motor->applied_power);
+    set_motor_power(motor, motor->applied_effort);
 
     motor->encoder.count = current_encoder_count;
 };

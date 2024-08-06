@@ -26,8 +26,8 @@ setup(
     zip_safe=True,
     maintainer="Michael Crum",
     maintainer_email="michael@michael-crum.com",
-    description="TODO: Package description",
-    license="TODO: License declaration",
+    description="Drivers for the little red rover robotics platform",
+    license="LGPL-2.1",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": ["base = little_red_rover.base:main"],

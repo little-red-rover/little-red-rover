@@ -12,6 +12,7 @@
 
 #include <geometry_msgs/msg/twist.h>
 #include <nav_msgs/msg/odometry.h>
+#include <sensor_msgs/msg/joint_state.h>
 #include <std_msgs/msg/int32.h>
 #include <stdio.h>
 #include <time.h>
@@ -67,8 +68,8 @@ static const char *TAG = "drive_base_driver";
 // PUBLISHERS
 #define PUBLISHER_LOOP_PERIOD_MS 100
 
-nav_msgs__msg__Odometry *odom_msg;
-rcl_publisher_t *odom_publisher;
+sensor_msgs__msg__JointState *wheel_state_msg;
+rcl_publisher_t *wheel_state_publisher;
 
 // SUBSCRIPTIONS
 geometry_msgs__msg__Twist *cmd_vel_msg;
@@ -107,15 +108,12 @@ void odom_publish_timer_callback()
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    odom_msg->header.stamp.sec = ts.tv_sec;
-    odom_msg->header.stamp.nanosec = ts.tv_nsec;
-    odom_msg->header.frame_id.data = "base_link";
-    odom_msg->header.frame_id.size = 10;
-    odom_msg->header.frame_id.capacity = 10;
+    wheel_state_msg->header.stamp.sec = ts.tv_sec;
+    wheel_state_msg->header.stamp.nanosec = ts.tv_nsec;
 
-    odom_msg->child_frame_id.data = "base_link";
-    odom_msg->child_frame_id.size = 10;
-    odom_msg->child_frame_id.capacity = 10;
+    // wheel_state_msg->child_frame_id.data = "base_link";
+    // wheel_state_msg->child_frame_id.size = 10;
+    // wheel_state_msg->child_frame_id.capacity = 10;
 
     // odom_msg->pose.pose.position =
     //   (geometry_msgs__msg__Point){ .x = 0.0, .y = 0.0, .z = 0.0 };
@@ -131,7 +129,7 @@ void odom_publish_timer_callback()
     //                                                      };
     //
     if (get_uros_state() == AGENT_CONNECTED) {
-        RCSOFTCHECK(rcl_publish(odom_publisher, odom_msg, NULL));
+        RCSOFTCHECK(rcl_publish(wheel_state_publisher, wheel_state_msg, NULL));
     }
 }
 
@@ -166,7 +164,8 @@ static void drive_base_driver_task(void *arg)
                                                .name = "odom_pubish_timer" };
     esp_timer_handle_t pub_timer_handle;
     ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
-    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
+    // esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS *
+    // 1000);
 
     set_drive_base_enabled(true);
 
@@ -187,9 +186,15 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    odom_msg = nav_msgs__msg__Odometry__create();
-    odom_publisher = register_publisher(
-      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "odom_testing");
+    wheel_state_msg = sensor_msgs__msg__JointState__create();
+
+    wheel_state_msg->header.frame_id.data = "base_link";
+    wheel_state_msg->header.frame_id.size = 9;
+    wheel_state_msg->header.frame_id.capacity = 9;
+
+    wheel_state_publisher = register_publisher(
+      ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
+      "wheel_states");
 
     // START TASK
     xTaskCreate(drive_base_driver_task,

@@ -64,32 +64,6 @@ def generate_launch_description():
         value_type=str,
     )
 
-    # DIFFERENTIAL DRIVE CONTROLLER
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("little_red_rover"),
-            "config",
-            "lrr_controllers.yaml",
-        ]
-    )
-
-    diff_drive = [
-        Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="both",
-            parameters=[
-                {
-                    "use_sim_time": run_sim,
-                    "robot_description": robot_description_content,
-                }
-            ],
-            remappings=[
-                ("/diff_drive_controller/cmd_vel_unstamped", "/cmd_vel"),
-            ],
-        ),
-    ]
-
     # TELEOPERATION
     teleop = [
         IncludeLaunchDescription(
@@ -124,8 +98,17 @@ def generate_launch_description():
                 "port": "8765",
             }.items(),
         ),
+        Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            output="both",
+            parameters=[
+                {
+                    "use_sim_time": run_sim,
+                    "robot_description": robot_description_content,
+                }
+            ],
+        ),
     ]
 
-    return LaunchDescription(
-        config + robot_launch + diff_drive + teleop + visualization
-    )
+    return LaunchDescription(config + robot_launch + teleop + visualization)

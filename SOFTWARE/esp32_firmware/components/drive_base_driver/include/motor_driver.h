@@ -20,6 +20,8 @@ typedef struct
     pcnt_channel_handle_t channel_a;
     pcnt_channel_handle_t channel_b;
     pcnt_unit_handle_t unit;
+    float velocity; // rad / s
+    float position; // rad
     int count;
 } encoder_handle_t;
 
@@ -32,9 +34,8 @@ typedef struct
     ledc_channel_t chan_b;
     gpio_num_t enable_pin;
     float cmd_velocity;
-    float reported_velocity;
-    float cmd_power;
-    float applied_power;
+    float cmd_effort;
+    float applied_effort;
     encoder_handle_t encoder;
     pid_ctrl_block_handle_t pid_controller;
     esp_timer_handle_t pid_timer;
