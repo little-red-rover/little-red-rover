@@ -2,96 +2,102 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8">
-	<title>Little Red Rover</title>
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-	<meta name="description" content="Description">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-defaults.css">
+    <meta charset="UTF-8">
+    <title>Little Red Rover</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="Description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-defaults.css">
 
-	<style>
-		@font-face {
-			font-family: 'Randomn4yy';
-			src: url('./_fonts/Randomn4yy-Regular.ttf');
-		}
+    <style>
+        @font-face {
+            font-family: 'Randomn4yy';
+            src: url('./_fonts/Randomn4yy-Regular.ttf');
+        }
 
-		.cover-main {
-			font-family: 'Randomn4yy', monospace;
-		}
+        .cover-main {
+            font-family: 'Randomn4yy', monospace;
+        }
 
-		.cover-main p {
-			font-size: 1.5em;
-		}
+        .cover-main p {
+            font-size: 1.5em;
+        }
 
-		:root {
-			--base-background-color: #080808;
+        :root {
+            --base-background-color: #080808;
 
-			--theme-lightness: 100%;
+            --theme-lightness: 100%;
 
-			/* Monochrome shades (darker) and tints (lighter) */
-			--mono-tint3: hsl(var(--mono-hue), var(--mono-saturation), 20%);
-			--mono-tint2: hsl(var(--mono-hue), var(--mono-saturation), 30%);
-			--mono-tint1: hsl(var(--mono-hue), var(--mono-saturation), 40%);
-			--mono-base: hsl(var(--mono-hue), var(--mono-saturation), 50%);
-			--mono-shade1: hsl(var(--mono-hue), var(--mono-saturation), 70%);
-			--mono-shade2: hsl(var(--mono-hue), var(--mono-saturation), 89%);
-			--mono-shade3: hsl(var(--mono-hue), var(--mono-saturation), 97%);
+            /* Monochrome shades (darker) and tints (lighter) */
+            --mono-tint3: hsl(var(--mono-hue), var(--mono-saturation), 20%);
+            --mono-tint2: hsl(var(--mono-hue), var(--mono-saturation), 30%);
+            --mono-tint1: hsl(var(--mono-hue), var(--mono-saturation), 40%);
+            --mono-base: hsl(var(--mono-hue), var(--mono-saturation), 50%);
+            --mono-shade1: hsl(var(--mono-hue), var(--mono-saturation), 70%);
+            --mono-shade2: hsl(var(--mono-hue), var(--mono-saturation), 89%);
+            --mono-shade3: hsl(var(--mono-hue), var(--mono-saturation), 97%);
 
-			--sidebar-name-font-family: 'Randomn4yy', monospace;
-			--sidebar-name-font-size: 2.5em;
-			--sidebar-nav-link-border-color: transparent;
-			--sidebar-nav-link-border-color--active: var(--theme-color);
-			--sidebar-nav-link-border-width: 0 4px 0 0;
-			--sidebar-nav-link-color--active: var(--theme-color);
-			--sidebar-nav-link-margin: 0 -25px 0 0;
-			--sidebar-nav-link-text-decoration: none;
-			--sidebar-nav-link-text-decoration--active: none;
-			--sidebar-nav-link-text-decoration--hover: underline;
+            --sidebar-name-font-family: 'Randomn4yy', monospace;
+            --sidebar-name-font-size: 2.5em;
+            --sidebar-nav-link-border-color: transparent;
+            --sidebar-nav-link-border-color--active: var(--theme-color);
+            --sidebar-nav-link-border-width: 0 4px 0 0;
+            --sidebar-nav-link-color--active: var(--theme-color);
+            --sidebar-nav-link-margin: 0 -25px 0 0;
+            --sidebar-nav-link-text-decoration: none;
+            --sidebar-nav-link-text-decoration--active: none;
+            --sidebar-nav-link-text-decoration--hover: underline;
 
-			--heading-font-family: 'Randomn4yy', monospace;
-			--heading-h1-font-size: var(--font-size-xxxl);
-			--heading-h2-font-size: var(--font-size-xxl);
-			--heading-h3-font-size: var(--font-size-xl);
-			--heading-h4-font-size: var(--font-size-m);
-			--heading-h5-font-size: var(--font-size-s);
-			--heading-h6-font-size: var(--font-size-xs);
-			--heading-margin: 2.5rem -0.1em -0.25em;
-		}
-	</style>
+            --heading-font-family: 'Randomn4yy', monospace;
+            --heading-h1-font-size: var(--font-size-xxxl);
+            --heading-h2-font-size: var(--font-size-xxl);
+            --heading-h3-font-size: var(--font-size-xl);
+            --heading-h4-font-size: var(--font-size-m);
+            --heading-h5-font-size: var(--font-size-s);
+            --heading-h6-font-size: var(--font-size-xs);
+            --heading-margin: 2.5rem -0.1em -0.25em;
+        }
+    </style>
 </head>
 
 <body>
-	<div id="app"></div>
-	<script>
-		window.$docsify = {
-			name: 'Little Red Docs',
-			plugins: [
-				function add_padding(hook, vm) {
-					var header = ['<br>'].join('');
-					var footer = [
-						'<hr/>',
-						'<br>',
-					].join('');
-					hook.afterEach(function (html) {
-						return (
-							header +
-							html +
-							footer
-						);
-					});
-				},
-			],
-		}
-	</script>
-	<!-- Docsify v4 -->
-	<script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+    <div id="app"></div>
+    <script>
+        window.$docsify = {
+            name: 'Little Red Docs',
+            loadSidebar: true,
+            alias: {
+                '/.*/_sidebar.md': '/_sidebar.md'
+            },
+            subMaxLevel: 2,
+            maxLevel: 4,
+            plugins: [
+                function add_padding(hook, vm) {
+                    var header = ['<br>'].join('');
+                    var footer = [
+                        '<hr/>',
+                        '<br>',
+                    ].join('');
+                    hook.afterEach(function (html) {
+                        return (
+                            header +
+                            html +
+                            footer
+                        );
+                    });
+                },
+            ],
+        }
+    </script>
+    <!-- Docsify v4 -->
+    <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
 
-	<!-- Required -->
-	<script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+    <!-- Required -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
 
-	<!-- Recommended -->
-	<script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+    <!-- Recommended -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
 </body>
 
 </html>

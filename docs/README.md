@@ -8,7 +8,7 @@ Little Red Rover (LRR) is a highly capable, differential drive, ROS 2 robot desi
 While none of the rovers' specs are top of the line, LRR gives students, hobbyists, and educators a representative ROS 2 experience and an entry point into the wonderful world of research robotics.
 Extensive development tooling, example code / projects, and documentation is provided to smooth the learning curve.
 
-## Thanks
+## Thanks <!-- {docsify-ignore} -->
 
 LRR is part of my Masters of Engineering (MEng) thesis for Cornell University.
 
