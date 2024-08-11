@@ -12,7 +12,7 @@ Extensive development tooling, example code / projects, and documentation is pro
 
 Little Red Rover was developed with educational use in mind. Each rover is affordable enought to be funded by a small course fee, and the detailed documentation and tutorials provide a starting point for a full curriculum.
 
-LRR is also perfect for robotics hobbyists interested in elevating their work. Breaking out of tinkery ecosystems like Arduino can be difficult, and LRR is an affordable starting point.
+LRR is perfect for robotics hobbyists interested in elevating their work. Breaking out of tinkery ecosystems like Arduino can be difficult, and LRR is an affordable starting point.
 
 ## Stackup
 
@@ -30,17 +30,18 @@ Little Red Rover is currently in developement, and the specs below may or may no
 * Wheel encoders and IMU for odometry
 * Designed for low effort assembly and large scale production
 
-## Capabilities
-
-* ROS 2 navigation stack
-    * SLAM
-    * Path planning
-    * Ect
-
 ## Repo Structure
 
 * `/SOFTWARE`: ROS and micro-ROS code, along with the Docker developement infrastructure. See `/SOFTWARE/README.md` for more details
 * `/HARDWARE`: KiCad PCB design files + information about the CAD in OnShape. See `/HARDWARE/README.md` for more details
+
+## Licenses
+
+* All software / firmware (contents of the `/SOFTWARE` folder) is licensed under GNU Lesser General Public License v2.1 or later.
+* All hardware (contents of the `/HARDWARE` folder) is licensed under CERN Open Hardware Licence Version 2 - Weakly Reciprocal.
+* All documentation (contents of the `/docs` folder) is lincensed under Creative Commons Zero v1.0 Universal.
+
+If these terms don't fit your use case, please reach out at michael@michael-crum.com.
 
 ## Thanks
 
