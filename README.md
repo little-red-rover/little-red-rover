@@ -1,7 +1,5 @@
 # Little Red Rover
 
-*WIP: Details on this page refer to planned capabilities, not the current status of the project. Think of this as a roadmap.* 
-
 ROS enabled robots are (really) expensive, preventing many aspiring robotic engineers from accessing powerful ROS tools.
 
 Little Red Rover (LRR) is a highly capable, differential drive, ROS 2 robot designed for an amateur budget.
@@ -37,9 +35,12 @@ Little Red Rover is currently in developement, and the specs below may or may no
 
 ## Licenses
 
-* All software / firmware (contents of the `/SOFTWARE` folder) is licensed under GNU Lesser General Public License v2.1 or later.
-* All hardware (contents of the `/HARDWARE` folder) is licensed under CERN Open Hardware Licence Version 2 - Weakly Reciprocal.
-* All documentation (contents of the `/docs` folder) is lincensed under Creative Commons Zero v1.0 Universal.
+* Software / Firmware (contents of the `/SOFTWARE` folder)
+    * GNU Lesser General Public License v2.1 or later
+* Hardware (contents of the `/HARDWARE` folder + linked OnShape project)
+    * CERN Open Hardware Licence Version 2 - Weakly Reciprocal
+* Documentation (contents of the `/docs` folder)
+    * Creative Commons Zero v1.0 Universal
 
 If these terms don't fit your use case, please reach out at michael@michael-crum.com.
 
