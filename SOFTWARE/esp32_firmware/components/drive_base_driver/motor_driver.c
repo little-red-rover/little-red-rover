@@ -42,7 +42,7 @@
 #define HYSTERESIS 0.25
 
 // Max change to motor power per pid cycle
-// Reduces current surges
+// Can be used to reduce voltage sag from current surges
 #define MAX_JERK 0.1
 
 #define PID_LOOP_PERIOD_MS 10.0
@@ -85,6 +85,9 @@ static void set_motor_power(motor_handle_t *motor, float power)
 
 void set_motor_velocity(motor_handle_t *motor, float velocity)
 {
+    if (motor->reversed) {
+        velocity *= -1;
+    }
     motor->cmd_velocity = velocity;
 }
 
@@ -121,7 +124,7 @@ void pid_callback(void *arg)
     int pulses_elapsed = current_encoder_count - motor->encoder.count;
     motor->encoder.velocity =
       PULSES_TO_RAD(pulses_elapsed) * (1000.0 / PID_LOOP_PERIOD_MS);
-    motor->encoder.position = mod(PULSES_TO_RAD(pulses_elapsed), (2.0 * M_PI));
+    motor->encoder.position = PULSES_TO_RAD(current_encoder_count);
     double error = motor->cmd_velocity - motor->encoder.velocity;
 
     ESP_ERROR_CHECK(
@@ -143,7 +146,8 @@ void configure_motor(motor_handle_t *motor,
                      gpio_num_t pwm_b_pin,
                      ledc_channel_t pwm_b_chan,
                      gpio_num_t encoder_pin_a,
-                     gpio_num_t encoder_pin_b)
+                     gpio_num_t encoder_pin_b,
+                     bool reversed)
 {
     // PWM
     configure_pwm(pwm_a_chan, pwm_a_pin);
@@ -151,6 +155,8 @@ void configure_motor(motor_handle_t *motor,
 
     motor->chan_a = pwm_a_chan;
     motor->chan_b = pwm_b_chan;
+
+    motor->reversed = reversed;
 
     // ENCODER
     pcnt_unit_config_t unit_config = { .low_limit = INT16_MIN,
@@ -199,7 +205,7 @@ void configure_motor(motor_handle_t *motor,
 
     // PID
     pid_ctrl_parameter_t pid_runtime_param = {
-        .kp = 0.3, // TODO: tune these (maybe make them uROS controlled?)
+        .kp = 0.7, // TODO: tune these (maybe make them uROS controlled?)
         .ki = 0.3,
         .kd = 0.0,
         .cal_type = PID_CAL_TYPE_POSITIONAL,

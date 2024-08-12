@@ -40,6 +40,7 @@ typedef struct
     pid_ctrl_block_handle_t pid_controller;
     esp_timer_handle_t pid_timer;
     esp_timer_create_args_t pid_args;
+    bool reversed;
 } motor_handle_t;
 
 /*
@@ -68,7 +69,8 @@ void configure_motor(motor_handle_t *motor,
                      gpio_num_t pwm_b_pin,
                      ledc_channel_t pwm_b_chan,
                      gpio_num_t encoder_pin_a,
-                     gpio_num_t encoder_pin_b);
+                     gpio_num_t encoder_pin_b,
+                     bool reversed);
 
 /*
  * Initialize the PWM peripheral for use with motors.

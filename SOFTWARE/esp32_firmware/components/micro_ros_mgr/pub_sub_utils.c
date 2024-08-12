@@ -14,6 +14,7 @@
 #include <rclc/rclc.h>
 
 #include <rmw_microros/rmw_microros.h>
+#include <subscription.h>
 #include <time.h>
 #include <uros_network_interfaces.h>
 
@@ -92,20 +93,20 @@ void create_pub_sub(rcl_node_t *node)
         ESP_LOGI("create_pub_sub",
                  "Creating publisher %s",
                  (publishers[i]->topic_name));
-        RCCHECK(rclc_publisher_init_best_effort(&(publishers[i]->publisher),
-                                                node,
-                                                publishers[i]->type_support,
-                                                publishers[i]->topic_name));
+        RCSOFTCHECK(rclc_publisher_init_best_effort(&(publishers[i]->publisher),
+                                                    node,
+                                                    publishers[i]->type_support,
+                                                    publishers[i]->topic_name));
     }
     for (uint16_t i = 0; i < num_subscriptions; i++) {
         ESP_LOGI("create_pub_sub",
                  "Creating subscriber %s",
                  (subscriptions[i]->topic_name));
-        RCCHECK(
-          rclc_subscription_init_default(&(subscriptions[i]->subscription),
-                                         node,
-                                         subscriptions[i]->type_support,
-                                         subscriptions[i]->topic_name));
+        RCSOFTCHECK(
+          rclc_subscription_init_best_effort(&(subscriptions[i]->subscription),
+                                             node,
+                                             subscriptions[i]->type_support,
+                                             subscriptions[i]->topic_name));
     }
 }
 
@@ -116,7 +117,7 @@ void create_sub_callbacks(rclc_executor_t *executor)
                  "Creating callback for subscriber %s",
                  subscriptions[i]->topic_name);
 
-        RCCHECK(
+        RCSOFTCHECK(
           rclc_executor_add_subscription(executor,
                                          &(subscriptions[i]->subscription),
                                          (subscriptions[i]->msg),

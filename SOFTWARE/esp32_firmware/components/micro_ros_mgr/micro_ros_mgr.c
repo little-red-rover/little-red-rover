@@ -1,7 +1,9 @@
 // Based on
 // https://github.com/micro-ROS/micro_ros_arduino/blob/iron/examples/micro-ros_reconnection_example/micro-ros_reconnection_example.ino
 
+#include <ping.h>
 #include <rcl/types.h>
+#include <rmw/ret_types.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -20,6 +22,7 @@
 #include "micro_ros_mgr.h"
 
 #include <rmw_microros/rmw_microros.h>
+
 #include <uros_network_interfaces.h>
 
 #include "pub_sub_utils.h"
@@ -146,8 +149,6 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
-    destroy_pub_sub(&node);
-
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
     RCCHECK(rmw_shutdown(&rmw_context));
@@ -164,14 +165,6 @@ enum states get_uros_state()
     return state;
 }
 
-void add_subscription_callback(rcl_subscription_t *subscription,
-                               void *msg,
-                               rclc_subscription_callback_t callback)
-{
-    RCCHECK(rclc_executor_add_subscription(
-      &executor, subscription, msg, callback, ON_NEW_DATA));
-}
-
 void micro_ros_task(void *arg)
 {
     state = WAITING_AGENT;
@@ -184,21 +177,15 @@ void micro_ros_task(void *arg)
     while (true) {
         switch (state) {
             case WAITING_AGENT:
-                EXECUTE_EVERY_N_MS(
-                  500, rmw_context = rmw_get_zero_initialized_context();
-                  RCCHECK(rmw_init(&rmw_options, &rmw_context));
-                  state = (RMW_RET_OK == rmw_uros_ping_agent(100, 5))
-                            ? AGENT_AVAILABLE
-                            : WAITING_AGENT;
-                  if (state == WAITING_AGENT) {
-                      ESP_LOGI(TAG, "Agent unavailable, trying again.");
-                      get_micro_ros_agent_ip();
-                      RCCHECK(rmw_uros_options_set_udp_address(
-                        MICRO_ROS_AGENT_IP, "8001", &rmw_options));
-                  } else {
-                      RCCHECK(rmw_shutdown(&rmw_context));
-                      ESP_LOGI(TAG, "Agent connected.");
-                  });
+                state = (RMW_RET_OK ==
+                         rmw_uros_ping_agent_options(100, 5, &rmw_options))
+                          ? AGENT_AVAILABLE
+                          : WAITING_AGENT;
+                if (state == WAITING_AGENT) {
+                    ESP_LOGI(TAG, "Agent unavailable, trying again.");
+                } else {
+                    ESP_LOGI(TAG, "Agent connected.");
+                }
                 break;
             case AGENT_AVAILABLE:
                 state = (RCL_RET_OK == create_entities()) ? AGENT_CONNECTED
@@ -209,22 +196,21 @@ void micro_ros_task(void *arg)
                 };
                 break;
             case AGENT_CONNECTED:
-                EXECUTE_EVERY_N_MS(200,
-                                   state =
-                                     (RMW_RET_OK == rmw_uros_ping_agent(100, 5))
-                                       ? AGENT_CONNECTED
-                                       : AGENT_DISCONNECTED;);
+                EXECUTE_EVERY_N_MS(
+                  500,
+                  state = (RMW_RET_OK ==
+                           rmw_uros_ping_agent_options(100, 5, &rmw_options))
+                            ? AGENT_CONNECTED
+                            : AGENT_DISCONNECTED;);
 
                 if (state == AGENT_CONNECTED) {
                     rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-                    usleep(1000);
                 }
                 break;
             case AGENT_DISCONNECTED:
                 ESP_LOGI(TAG, "Agent disconnected, attempting to reconnect.");
-                destroy_entities();
                 state = WAITING_AGENT;
-                init_middleware();
+                destroy_entities();
                 break;
             default:
                 break;
@@ -236,12 +222,7 @@ void micro_ros_task(void *arg)
 
 void micro_ros_mgr_init()
 {
-
     // pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
-    xTaskCreate(micro_ros_task,
-                "uros_task",
-                CONFIG_MICRO_ROS_APP_STACK,
-                NULL,
-                CONFIG_MICRO_ROS_APP_TASK_PRIO,
-                NULL);
+    xTaskCreate(
+      micro_ros_task, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 10, NULL);
 }

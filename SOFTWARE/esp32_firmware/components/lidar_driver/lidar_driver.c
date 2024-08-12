@@ -3,6 +3,7 @@
 
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
@@ -151,7 +152,7 @@ static void lidar_driver_task(void *arg)
 
     scan_msg->header.frame_id.data = "lidar_frame";
     scan_msg->header.frame_id.size = 11;
-    scan_msg->header.frame_id.capacity = 11;
+    scan_msg->header.frame_id.capacity = 12;
 
     // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg->scan_time = 0.001;
@@ -179,10 +180,10 @@ static void lidar_driver_task(void *arg)
         uint8_t checksum =
           CalCRC8((uint8_t *)&(scan_data), sizeof(scan_data) - 1);
         if (checksum != scan_data.crc8) {
-            // ESP_LOGI(TAG,
-            //          "Invalid checksum, got %d, expected %d",
-            //          checksum,
-            //          scan_data.crc8);
+            ESP_LOGI(TAG,
+                     "Invalid checksum, got %d, expected %d",
+                     checksum,
+                     scan_data.crc8);
         } else if (get_uros_state() == AGENT_CONNECTED) {
             // todo: race condition
             publish_scan(&scan_data);
