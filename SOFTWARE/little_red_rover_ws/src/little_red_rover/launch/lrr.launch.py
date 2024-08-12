@@ -111,4 +111,14 @@ def generate_launch_description():
         ),
     ]
 
-    return LaunchDescription(config + robot_launch + teleop + visualization)
+    # ODOMETRY
+    odometry = [
+        Node(
+            package="little_red_rover",
+            executable="odometry_publisher",
+            output="both",
+            parameters=[],
+        )
+    ]
+
+    return LaunchDescription(config + robot_launch + teleop + visualization + odometry)

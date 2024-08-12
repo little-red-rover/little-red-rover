@@ -30,6 +30,9 @@ setup(
     license="LGPL-2.1",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["base = little_red_rover.base:main"],
+        "console_scripts": [
+            "base = little_red_rover.base:main",
+            "odometry_publisher = little_red_rover.odometry_publisher:main",
+        ],
     },
 )

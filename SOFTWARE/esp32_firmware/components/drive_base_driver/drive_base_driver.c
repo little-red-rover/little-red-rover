@@ -70,7 +70,7 @@ static const char *TAG = "drive_base_driver";
 // PUBLISHERS
 #define PUBLISHER_LOOP_PERIOD_MS 100
 
-sensor_msgs__msg__JointState *wheel_state_msg;
+sensor_msgs__msg__JointState wheel_state_msg;
 rcl_publisher_t *wheel_state_publisher;
 
 // SUBSCRIPTIONS
@@ -109,19 +109,19 @@ void wheel_state_publish_timer_callback()
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    wheel_state_msg->header.stamp.sec = ts.tv_sec;
-    wheel_state_msg->header.stamp.nanosec = ts.tv_nsec;
+    wheel_state_msg.header.stamp.sec = ts.tv_sec;
+    wheel_state_msg.header.stamp.nanosec = ts.tv_nsec;
 
-    wheel_state_msg->position.data[0] = left_motor_handle.encoder.position;
-    wheel_state_msg->velocity.data[0] = left_motor_handle.encoder.velocity;
-    wheel_state_msg->effort.data[0] = left_motor_handle.applied_effort;
+    wheel_state_msg.position.data[0] = left_motor_handle.encoder.position;
+    wheel_state_msg.velocity.data[0] = left_motor_handle.encoder.velocity;
+    wheel_state_msg.effort.data[0] = left_motor_handle.applied_effort;
 
-    wheel_state_msg->position.data[1] = right_motor_handle.encoder.position;
-    wheel_state_msg->velocity.data[1] = right_motor_handle.encoder.velocity;
-    wheel_state_msg->effort.data[1] = right_motor_handle.applied_effort;
+    wheel_state_msg.position.data[1] = right_motor_handle.encoder.position;
+    wheel_state_msg.velocity.data[1] = right_motor_handle.encoder.velocity;
+    wheel_state_msg.effort.data[1] = right_motor_handle.applied_effort;
 
     if (get_uros_state() == AGENT_CONNECTED) {
-        RCSOFTCHECK(rcl_publish(wheel_state_publisher, wheel_state_msg, NULL));
+        RCSOFTCHECK(rcl_publish(wheel_state_publisher, &wheel_state_msg, NULL));
     }
 }
 
@@ -181,8 +181,6 @@ void drive_base_driver_init()
       cmd_vel_msg,
       &cmd_vel_callback);
 
-    wheel_state_msg = sensor_msgs__msg__JointState__create();
-
     static micro_ros_utilities_memory_conf_t conf = { 0 };
 
     conf.max_string_capacity = 15;
@@ -191,32 +189,32 @@ void drive_base_driver_init()
 
     micro_ros_utilities_create_message_memory(
       ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
-      wheel_state_msg,
+      &wheel_state_msg,
       conf);
 
-    wheel_state_msg->header.frame_id.size = 9;
-    wheel_state_msg->header.frame_id.capacity = 10;
-    wheel_state_msg->header.frame_id.data = "robot_body";
+    wheel_state_msg.header.frame_id.size = 9;
+    wheel_state_msg.header.frame_id.capacity = 10;
+    wheel_state_msg.header.frame_id.data = "robot_body";
 
-    wheel_state_msg->name.size = 2;
-    wheel_state_msg->name.capacity = 2;
+    wheel_state_msg.name.size = 2;
+    wheel_state_msg.name.capacity = 2;
 
-    wheel_state_msg->name.data[0].size = 10;
-    wheel_state_msg->name.data[0].capacity = 11;
-    wheel_state_msg->name.data[0].data = "wheel_left";
+    wheel_state_msg.name.data[0].size = 10;
+    wheel_state_msg.name.data[0].capacity = 11;
+    wheel_state_msg.name.data[0].data = "wheel_left";
 
-    wheel_state_msg->name.data[1].size = 11;
-    wheel_state_msg->name.data[1].capacity = 12;
-    wheel_state_msg->name.data[1].data = "wheel_right";
+    wheel_state_msg.name.data[1].size = 11;
+    wheel_state_msg.name.data[1].capacity = 12;
+    wheel_state_msg.name.data[1].data = "wheel_right";
 
-    wheel_state_msg->position.size = 2;
-    wheel_state_msg->position.capacity = 2;
+    wheel_state_msg.position.size = 2;
+    wheel_state_msg.position.capacity = 2;
 
-    wheel_state_msg->velocity.size = 2;
-    wheel_state_msg->velocity.capacity = 2;
+    wheel_state_msg.velocity.size = 2;
+    wheel_state_msg.velocity.capacity = 2;
 
-    wheel_state_msg->effort.size = 2;
-    wheel_state_msg->effort.capacity = 2;
+    wheel_state_msg.effort.size = 2;
+    wheel_state_msg.effort.capacity = 2;
 
     wheel_state_publisher = register_publisher(
       ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
