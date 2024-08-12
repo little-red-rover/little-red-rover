@@ -16,9 +16,9 @@ def generate_launch_description():
         Node(
             package="micro_ros_agent",
             executable="micro_ros_agent",
+            output="both",
             arguments=["udp4", "--port", "8001", "--ip", robot_ip],
         ),
     ]
 
-    # return LaunchDescription(gazebo_launch + micro_ros_launch + visualization)
     return LaunchDescription(micro_ros_launch)
