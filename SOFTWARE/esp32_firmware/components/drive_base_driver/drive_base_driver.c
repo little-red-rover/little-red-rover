@@ -192,8 +192,8 @@ void drive_base_driver_init()
       &wheel_state_msg,
       conf);
 
-    wheel_state_msg.header.frame_id.size = 9;
-    wheel_state_msg.header.frame_id.capacity = 10;
+    wheel_state_msg.header.frame_id.size = 10;
+    wheel_state_msg.header.frame_id.capacity = 11;
     wheel_state_msg.header.frame_id.data = "robot_body";
 
     wheel_state_msg.name.size = 2;
