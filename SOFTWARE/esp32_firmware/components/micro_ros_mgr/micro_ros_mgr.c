@@ -4,11 +4,13 @@
 #include <ping.h>
 #include <rcl/types.h>
 #include <rmw/ret_types.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
@@ -115,8 +117,11 @@ void init_middleware()
 
     rmw_context = rmw_get_zero_initialized_context();
 
-    RCCHECK(rmw_uros_options_set_udp_address(
-      MICRO_ROS_AGENT_IP, "8001", &rmw_options));
+    rmw_uros_options_set_udp_address(MICRO_ROS_AGENT_IP, "8001", &rmw_options);
+
+    unsigned char mac_base[6] = { 0 };
+    esp_efuse_mac_get_default(mac_base);
+    rmw_uros_options_set_client_key(*((uint32_t *)&mac_base[2]), &rmw_options);
 }
 
 rcl_ret_t create_entities()
@@ -149,7 +154,9 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
-    destroy_pub_sub(&node);
+    if (state == AGENT_CONNECTED) {
+        destroy_pub_sub(&node);
+    }
 
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
