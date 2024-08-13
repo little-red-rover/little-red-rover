@@ -9,6 +9,7 @@
 #include <rcl/node.h>
 #include <rcl/publisher.h>
 #include <rcl/rcl.h>
+#include <rcl/timer.h>
 #include <rcl/types.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
@@ -16,6 +17,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <subscription.h>
 #include <time.h>
+#include <timer.h>
 #include <uros_network_interfaces.h>
 
 #define RCCHECK(fn)                                                            \
@@ -40,6 +42,7 @@
 
 #define MAX_PUBLISHERS 10
 #define MAX_SUBSCRIBERS 10
+#define MAX_TIMERS 10
 
 static publisher_info *publishers[MAX_PUBLISHERS];
 static size_t num_publishers = 0;
@@ -47,9 +50,12 @@ static size_t num_publishers = 0;
 static subscription_info *subscriptions[MAX_SUBSCRIBERS];
 static size_t num_subscriptions = 0;
 
-size_t get_num_subscriptions()
+static timer_info *timers[MAX_TIMERS];
+static size_t num_timers = 0;
+
+size_t get_num_handles()
 {
-    return num_subscriptions;
+    return num_subscriptions + num_timers;
 }
 
 rcl_publisher_t *register_publisher(
@@ -87,9 +93,18 @@ rcl_subscription_t *register_subscription(
     return &(subscriptions[num_subscriptions - 1]->subscription);
 }
 
-void create_pub_sub(rcl_node_t *node)
+void register_timer(rcl_timer_callback_t callback, unsigned int timeout_ns)
 {
-    for (uint16_t i = 0; i < num_publishers; i++) {
+    timers[num_timers] = malloc(sizeof(timer_info));
+    timers[num_timers]->timeout_ns = timeout_ns;
+    timers[num_timers]->callback = callback;
+    timers[num_timers]->timer = rcl_get_zero_initialized_timer();
+    num_timers++;
+}
+
+void create_pub_sub(rcl_node_t *node, rclc_support_t *support)
+{
+    for (size_t i = 0; i < num_publishers; i++) {
         ESP_LOGI("create_pub_sub",
                  "Creating publisher %s",
                  (publishers[i]->topic_name));
@@ -98,7 +113,7 @@ void create_pub_sub(rcl_node_t *node)
                                                     publishers[i]->type_support,
                                                     publishers[i]->topic_name));
     }
-    for (uint16_t i = 0; i < num_subscriptions; i++) {
+    for (size_t i = 0; i < num_subscriptions; i++) {
         ESP_LOGI("create_pub_sub",
                  "Creating subscriber %s",
                  (subscriptions[i]->topic_name));
@@ -108,11 +123,18 @@ void create_pub_sub(rcl_node_t *node)
                                              subscriptions[i]->type_support,
                                              subscriptions[i]->topic_name));
     }
+    for (size_t i = 0; i < num_timers; i++) {
+        ESP_LOGI("create_pub_sub", "Creating timer %zu", i);
+        RCSOFTCHECK(rclc_timer_init_default(&(timers[i]->timer),
+                                            support,
+                                            timers[i]->timeout_ns,
+                                            timers[i]->callback));
+    }
 }
 
-void create_sub_callbacks(rclc_executor_t *executor)
+void create_callbacks(rclc_executor_t *executor)
 {
-    for (uint16_t i = 0; i < num_subscriptions; i++) {
+    for (size_t i = 0; i < num_subscriptions; i++) {
         ESP_LOGI("create_sub_callbacks",
                  "Creating callback for subscriber %s",
                  subscriptions[i]->topic_name);
@@ -123,6 +145,13 @@ void create_sub_callbacks(rclc_executor_t *executor)
                                          (subscriptions[i]->msg),
                                          subscriptions[i]->callback,
                                          ON_NEW_DATA));
+    }
+
+    for (size_t i = 0; i < num_timers; i++) {
+        ESP_LOGI(
+          "create_timer_callbacks", "Creating callback for timer %zu", i);
+
+        RCSOFTCHECK(rclc_executor_add_timer(executor, &(timers[i]->timer)));
     }
 }
 
@@ -140,5 +169,10 @@ void destroy_pub_sub(rcl_node_t *node)
                  subscriptions[i]->topic_name);
         RCSOFTCHECK(
           rcl_subscription_fini(&(subscriptions[i]->subscription), node));
+    }
+
+    for (size_t i = 0; i < num_timers; i++) {
+        ESP_LOGI("destroy_pub_sub", "Destroying timer %zu", i);
+        RCSOFTCHECK(rcl_timer_fini(&(timers[i]->timer)));
     }
 }

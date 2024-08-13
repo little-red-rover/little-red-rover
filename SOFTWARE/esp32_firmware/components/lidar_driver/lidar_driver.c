@@ -5,6 +5,7 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
 #include <sensor_msgs/msg/detail/laser_scan__functions.h>
@@ -14,6 +15,7 @@
 
 #include "lidar_driver.h"
 #include "micro_ros_mgr.h"
+#include "soc/soc.h"
 #include <rcl/rcl.h>
 
 #include <math.h>
@@ -37,8 +39,6 @@ static const char *TAG = "lidar driver";
 #define POINT_PER_PACK 12
 #define HEADER 0x54
 #define VERLEN 0x2C
-
-#define POINT_PER_MSG 12 * 10
 
 sensor_msgs__msg__LaserScan scan_msg;
 rcl_publisher_t *lidar_publisher;
@@ -212,13 +212,15 @@ void lidar_driver_init()
 
     // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg.scan_time = 0.001;
+
     scan_msg.range_min = 0.1;
     scan_msg.range_max = 8.0;
 
-    xTaskCreate(lidar_driver_task,
-                "lidar_driver_task",
-                LIDAR_TASK_STACK_SIZE,
-                NULL,
-                5,
-                NULL);
+    xTaskCreatePinnedToCore(lidar_driver_task,
+                            "lidar_driver_task",
+                            LIDAR_TASK_STACK_SIZE,
+                            NULL,
+                            10,
+                            NULL,
+                            APP_CPU_NUM);
 }

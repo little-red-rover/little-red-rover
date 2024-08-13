@@ -18,8 +18,4 @@ void app_main(void)
     wifi_mgr_init();
 
     micro_ros_mgr_init();
-
-    while (1) {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
 }

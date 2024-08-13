@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rcl/rcl.h>
+#include <rcl/timer.h>
 #include <rcl/types.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
@@ -25,7 +26,15 @@ typedef struct
 
 } subscription_info;
 
-size_t get_num_subscriptions();
+typedef struct
+{
+    rcl_timer_t timer;
+    unsigned int timeout_ns;
+    rcl_timer_callback_t callback;
+
+} timer_info;
+
+size_t get_num_handles();
 
 rcl_publisher_t *register_publisher(
   const rosidl_message_type_support_t *type_support,
@@ -37,8 +46,10 @@ rcl_subscription_t *register_subscription(
   void *msg,
   rclc_subscription_callback_t callback);
 
-void create_pub_sub(rcl_node_t *node);
+void register_timer(rcl_timer_callback_t callback, unsigned int timeout_ns);
 
-void create_sub_callbacks(rclc_executor_t *executor);
+void create_pub_sub(rcl_node_t *node, rclc_support_t *support);
+
+void create_callbacks(rclc_executor_t *executor);
 
 void destroy_pub_sub(rcl_node_t *node);

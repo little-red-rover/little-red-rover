@@ -1,6 +1,8 @@
 #include "drive_base_driver.h"
 
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 
 #include "esp_timer.h"
@@ -21,6 +23,7 @@
 #include "micro_ros_mgr.h"
 #include "motor_driver.h"
 #include "pub_sub_utils.h"
+#include "soc/soc.h"
 
 #define DRIVE_BASE_TASK_SIZE (4096)
 
@@ -154,14 +157,6 @@ static void drive_base_driver_task(void *arg)
                     RIGHT_ENCODER_PIN_B,
                     true);
 
-    esp_timer_create_args_t pub_timer_args = {
-        .callback = wheel_state_publish_timer_callback,
-        .name = "wheel_state_publish_timer"
-    };
-    esp_timer_handle_t pub_timer_handle;
-    ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
-    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
-
     set_drive_base_enabled(true);
 
     while (1) {
@@ -220,11 +215,15 @@ void drive_base_driver_init()
       ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
       "joint_states");
 
+    register_timer(wheel_state_publish_timer_callback,
+                   PUBLISHER_LOOP_PERIOD_MS * 1000000);
+
     // START TASK
-    xTaskCreate(drive_base_driver_task,
-                "drive_base_driver_task",
-                DRIVE_BASE_TASK_SIZE,
-                NULL,
-                5,
-                NULL);
+    xTaskCreatePinnedToCore(drive_base_driver_task,
+                            "drive_base_driver_task",
+                            DRIVE_BASE_TASK_SIZE,
+                            NULL,
+                            10,
+                            NULL,
+                            APP_CPU_NUM);
 }

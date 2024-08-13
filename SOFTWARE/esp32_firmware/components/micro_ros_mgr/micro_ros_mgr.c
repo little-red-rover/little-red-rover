@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "nvs.h"
 
@@ -28,6 +29,7 @@
 #include <uros_network_interfaces.h>
 
 #include "pub_sub_utils.h"
+#include "soc/soc.h"
 
 #define RCCHECK(fn)                                                            \
     {                                                                          \
@@ -137,31 +139,29 @@ rcl_ret_t create_entities()
     RCCHECK(rclc_node_init_default(&node, "little_red_rover", "", &support));
 
     // create publishers and subscriptions
-    create_pub_sub(&node);
+    create_pub_sub(&node, &support);
 
     // create executor
     executor = rclc_executor_get_zero_initialized_executor();
-    ESP_LOGI(TAG, "Initing executor with %zu handles", get_num_subscriptions());
-    if (get_num_subscriptions() > 0) {
+    ESP_LOGI(TAG, "Initing executor with %zu handles", get_num_handles());
+    if (get_num_handles() > 0) {
         RCCHECK(rclc_executor_init(
-          &executor, &support.context, get_num_subscriptions(), &allocator));
+          &executor, &support.context, get_num_handles(), &allocator));
     }
 
-    create_sub_callbacks(&executor);
+    create_callbacks(&executor);
 
     return RCL_RET_OK;
 }
 
 rcl_ret_t destroy_entities()
 {
-    if (state == AGENT_CONNECTED) {
-        destroy_pub_sub(&node);
-    }
+    destroy_pub_sub(&node);
 
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
     RCCHECK(rmw_shutdown(&rmw_context));
-    RCCHECK(rcl_node_fini(&node));
+    RCSOFTCHECK(rcl_node_fini(&node));
     RCCHECK(rcl_shutdown(&support.context));
     rclc_executor_fini(&executor);
     rclc_support_fini(&support);
@@ -231,7 +231,11 @@ void micro_ros_task(void *arg)
 
 void micro_ros_mgr_init()
 {
-    // pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
-    xTaskCreate(
-      micro_ros_task, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 10, NULL);
+    xTaskCreatePinnedToCore(micro_ros_task,
+                            "uros_task",
+                            CONFIG_MICRO_ROS_APP_STACK,
+                            NULL,
+                            10,
+                            NULL,
+                            APP_CPU_NUM);
 }
