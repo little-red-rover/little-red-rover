@@ -2,10 +2,7 @@
     "names": {
         "rmw_microxrcedds": {
             "cmake-args": [
-                "-DRMW_UXRCE_MAX_PUBLISHERS=4"
-                "-DRMW_UXRCE_MAX_HISTORY=16",
-                "-DRMW_UXRCE_STREAM_HISTORY=16",
-                "-DRMW_UXRCE_MAX_TRANSPORT_MTU=4096"
+                "-DRMW_UXRCE_MAX_PUBLISHERS=3"
             ]
         },
         "microxrcedds_client": {

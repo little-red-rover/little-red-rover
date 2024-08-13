@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "pub_sub_utils.h"
 #include <sensor_msgs/msg/detail/laser_scan__functions.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -29,13 +30,15 @@
 #define LIDAR_UART_PORT_NUM (1)
 #define LIDAR_UART_BAUD_RATE (230400)
 #define LIDAR_TASK_STACK_SIZE (4098)
-#define BUF_SIZE 1024
+#define BUF_SIZE 2048
 
 static const char *TAG = "lidar driver";
 
 #define POINT_PER_PACK 12
 #define HEADER 0x54
 #define VERLEN 0x2C
+
+#define POINT_PER_MSG 12 * 10
 
 sensor_msgs__msg__LaserScan scan_msg;
 rcl_publisher_t *lidar_publisher;
@@ -93,9 +96,6 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len)
     return crc;
 }
 
-float ranges[POINT_PER_PACK] = {};
-float intensities[POINT_PER_PACK] = {};
-
 rcl_ret_t publish_scan(const LiDARFrame *scan)
 {
     scan_msg.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
@@ -109,20 +109,14 @@ rcl_ret_t publish_scan(const LiDARFrame *scan)
       scan_msg.angle_increment / deg_2_rad((float)(scan->speed));
 
     for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
-        ranges[i] = (float)(scan->points[i].distance) / 1000.0;
-        intensities[i] = (float)(scan->points[i].intensity);
+        scan_msg.ranges.data[i] = (float)(scan->points[i].distance) / 1000.0;
+        scan_msg.intensities.data[i] = (float)(scan->points[i].intensity);
     }
-    scan_msg.ranges.data = ranges;
-    scan_msg.ranges.capacity = POINT_PER_PACK;
-    scan_msg.ranges.size = POINT_PER_PACK;
-    scan_msg.intensities.data = intensities;
-    scan_msg.intensities.capacity = POINT_PER_PACK;
-    scan_msg.intensities.size = POINT_PER_PACK;
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    scan_msg.header.stamp.sec = ts.tv_sec;
-    scan_msg.header.stamp.nanosec = ts.tv_nsec;
+    scan_msg.header.stamp.sec = (int32_t)ts.tv_sec;
+    scan_msg.header.stamp.nanosec = (int32_t)ts.tv_nsec;
 
     return rcl_publish(lidar_publisher, &scan_msg, NULL);
 }
@@ -151,13 +145,11 @@ static void lidar_driver_task(void *arg)
     ESP_ERROR_CHECK(uart_set_pin(
       LIDAR_UART_PORT_NUM, LIDAR_TXD, LIDAR_RXD, LIDAR_RTS, LIDAR_CTS));
 
-    // Pulled this from a logic analyzer, can't find it in the documentation
-    scan_msg.scan_time = 0.001;
-    scan_msg.range_min = 0.1;
-    scan_msg.range_max = 8.0;
-
     uint8_t start_chars[2] = { 0x00, 0x00 };
-    LiDARFrame scan_data;
+    static LiDARFrame scan_data;
+
+    scan_data.header = HEADER;
+    scan_data.ver_len = VERLEN;
 
     while (1) {
         uart_read_bytes(
@@ -167,8 +159,6 @@ static void lidar_driver_task(void *arg)
             start_chars[1] = start_chars[0];
             continue;
         }
-        scan_data.header = HEADER;
-        scan_data.ver_len = VERLEN;
 
         uart_read_bytes(LIDAR_UART_PORT_NUM,
                         ((uint8_t *)&scan_data) + 2,
@@ -183,7 +173,6 @@ static void lidar_driver_task(void *arg)
                      checksum,
                      scan_data.crc8);
         } else if (get_uros_state() == AGENT_CONNECTED) {
-            // todo: race condition
             publish_scan(&scan_data);
         }
     }
@@ -215,10 +204,21 @@ void lidar_driver_init()
     scan_msg.header.frame_id.size = 11;
     scan_msg.header.frame_id.capacity = 12;
 
+    scan_msg.ranges.capacity = POINT_PER_PACK;
+    scan_msg.ranges.size = POINT_PER_PACK;
+
+    scan_msg.intensities.capacity = POINT_PER_PACK;
+    scan_msg.intensities.size = POINT_PER_PACK;
+
+    // Pulled this from a logic analyzer, can't find it in the documentation
+    scan_msg.scan_time = 0.001;
+    scan_msg.range_min = 0.1;
+    scan_msg.range_max = 8.0;
+
     xTaskCreate(lidar_driver_task,
                 "lidar_driver_task",
                 LIDAR_TASK_STACK_SIZE,
                 NULL,
-                10,
+                5,
                 NULL);
 }

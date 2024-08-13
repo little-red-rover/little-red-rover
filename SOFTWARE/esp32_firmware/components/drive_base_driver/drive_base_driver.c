@@ -165,7 +165,7 @@ static void drive_base_driver_task(void *arg)
     set_drive_base_enabled(true);
 
     while (1) {
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
@@ -225,6 +225,6 @@ void drive_base_driver_init()
                 "drive_base_driver_task",
                 DRIVE_BASE_TASK_SIZE,
                 NULL,
-                10,
+                5,
                 NULL);
 }
