@@ -14,11 +14,11 @@ class OdomPublisher(Node):
         )
         self.subscription  # prevent unused variable warning
 
-        # self.publisher = self.create_publisher(
-        #     Odometry, "odom", qos_profile_sensor_data
-        # )
+        self.publisher = self.create_publisher(
+            Odometry, "odom", qos_profile_sensor_data
+        )
 
-    def listener_callback(self, msg):
+    def listener_callback(self, msg: JointState):
         self.get_logger().info("Got joint state message: %f" % msg.position[0])
 
 
