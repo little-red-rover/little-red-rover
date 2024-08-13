@@ -149,6 +149,8 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
+    destroy_pub_sub(&node);
+
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
     RCCHECK(rmw_shutdown(&rmw_context));
