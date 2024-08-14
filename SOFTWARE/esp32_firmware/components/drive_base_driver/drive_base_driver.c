@@ -117,11 +117,11 @@ void wheel_state_publish_timer_callback()
 
     wheel_state_msg.position.data[0] = left_motor_handle.encoder.position;
     wheel_state_msg.velocity.data[0] = left_motor_handle.encoder.velocity;
-    wheel_state_msg.effort.data[0] = left_motor_handle.applied_effort;
+    wheel_state_msg.effort.data[0] = (double)left_motor_handle.applied_effort;
 
     wheel_state_msg.position.data[1] = right_motor_handle.encoder.position;
     wheel_state_msg.velocity.data[1] = right_motor_handle.encoder.velocity;
-    wheel_state_msg.effort.data[1] = right_motor_handle.applied_effort;
+    wheel_state_msg.effort.data[1] = (double)right_motor_handle.applied_effort;
 
     if (get_uros_state() == AGENT_CONNECTED) {
         RCSOFTCHECK(rcl_publish(wheel_state_publisher, &wheel_state_msg, NULL));
@@ -130,9 +130,6 @@ void wheel_state_publish_timer_callback()
 
 static void drive_base_driver_task(void *arg)
 {
-    while (get_uros_state() != AGENT_CONNECTED) {
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
     // PWM SETUP
     init_motor_pwm();
 
@@ -179,8 +176,8 @@ void drive_base_driver_init()
     static micro_ros_utilities_memory_conf_t conf = { 0 };
 
     conf.max_string_capacity = 15;
-    conf.max_ros2_type_sequence_capacity = 2;
-    conf.max_basic_type_sequence_capacity = 2;
+    conf.max_ros2_type_sequence_capacity = 3;
+    conf.max_basic_type_sequence_capacity = 3;
 
     micro_ros_utilities_create_message_memory(
       ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),

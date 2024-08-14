@@ -138,6 +138,9 @@ rcl_ret_t create_entities()
     node = rcl_get_zero_initialized_node();
     RCCHECK(rclc_node_init_default(&node, "little_red_rover", "", &support));
 
+    // destroy old publishers and subscriptions (if any)
+    destroy_pub_sub(&node);
+
     // create publishers and subscriptions
     create_pub_sub(&node, &support);
 
@@ -156,8 +159,6 @@ rcl_ret_t create_entities()
 
 rcl_ret_t destroy_entities()
 {
-    destroy_pub_sub(&node);
-
     rmw_context = *rcl_context_get_rmw_context(&support.context);
     (void)rmw_uros_set_context_entity_destroy_session_timeout(&rmw_context, 0);
     RCCHECK(rmw_shutdown(&rmw_context));
