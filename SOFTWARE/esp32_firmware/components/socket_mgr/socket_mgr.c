@@ -9,7 +9,7 @@
 #include "lwip/sockets.h"
 #include "nvs.h"
 
-#include "msgpack.h"
+#include "pb.h"
 
 #define SOCKET_TX_TASK_STACK_SIZE 4096
 #define SOCKET_RX_TASK_STACK_SIZE 4096
@@ -136,9 +136,19 @@ static void socket_rx_task(void *arg)
             if (strncmp(rx_buffer, "OK: ", 4) == 0) {
                 ESP_LOGI(TAG, "Received expected message, reconnecting");
             }
+
+            // msgpack_unpacked msg;
+            // msgpack_unpacked_init(&msg);
+            // msgpack_unpack_next(&msg, rx_buffer, sizeof(rx_buffer), NULL);
+            //
+            // /* prints the deserialized object. */
+            // msgpack_object obj = msg.data;
+            // msgpack_object_print(stdout,
+            //                      obj); /*=> ["Hello", "MessagePack", 12345]
+            //                      */
         }
 
-        UdpCmd_t rx_packet;
+        // UdpCmd_t rx_packet;
 
         // Place onto relevant queue
         // switch (rx_packet.event_id) {
