@@ -1,4 +1,4 @@
-#include "include/socket_mgr.h"
+#include "socket_mgr.h"
 
 #include "freertos/idf_additions.h"
 #include <freertos/FreeRTOS.h>
@@ -9,7 +9,11 @@
 #include "lwip/sockets.h"
 #include "nvs.h"
 
+#include "messages.pb.h"
 #include "pb.h"
+#include "pb_common.h"
+#include "pb_decode.h"
+#include "pb_utils.h"
 
 #define SOCKET_TX_TASK_STACK_SIZE 4096
 #define SOCKET_RX_TASK_STACK_SIZE 4096
@@ -31,8 +35,7 @@ esp_err_t get_agent_ip()
         err = nvs_get_str(my_handle, "uros_ag_ip", AGENT_IP, &l);
         switch (err) {
             case ESP_OK:
-                ESP_LOGI(
-                  TAG, "Retrieved IP (%s) for micro ros agent IP.", AGENT_IP);
+                ESP_LOGI(TAG, "Retrieved IP (%s) for agent IP.", AGENT_IP);
                 break;
             case ESP_ERR_NVS_NOT_FOUND:
                 ESP_LOGI(TAG, "Agent IP has not been set.");
@@ -107,12 +110,11 @@ static void socket_tx_task(void *arg)
 
 size_t num_rx_queues;
 QueueHandle_t rx_queues[MAX_RX_QUEUES];
-static char rx_buffer[1500];
+static unsigned char rx_buffer[1500];
 
 static void socket_rx_task(void *arg)
 {
-    // Recv from socket
-    struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
+    struct sockaddr_storage source_addr;
     socklen_t socklen = sizeof(source_addr);
     while (1) {
         int len = recvfrom(socket_id,
@@ -122,42 +124,26 @@ static void socket_rx_task(void *arg)
                            (struct sockaddr *)&source_addr,
                            &socklen);
 
-        // Error occurred during receiving
         if (len < 0) {
             ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
             return;
-        }
-        // Data received
-        else {
-            rx_buffer[len] = 0; // Null-terminate whatever we received and
-                                // treat like a string
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, AGENT_IP);
-            ESP_LOGI(TAG, "%s", rx_buffer);
-            if (strncmp(rx_buffer, "OK: ", 4) == 0) {
-                ESP_LOGI(TAG, "Received expected message, reconnecting");
+        } else {
+            pb_istream_t stream = pb_istream_from_buffer(rx_buffer, len);
+
+            const pb_msgdesc_t *type = decode_unionmessage_type(&stream);
+            bool status = false;
+
+            if (type == TwistCmd_fields) {
+                TwistCmd msg = {};
+                status =
+                  decode_unionmessage_contents(&stream, TwistCmd_fields, &msg);
+                printf("Got CmdVel: %f, %f\n", msg.v, msg.w);
             }
 
-            // msgpack_unpacked msg;
-            // msgpack_unpacked_init(&msg);
-            // msgpack_unpack_next(&msg, rx_buffer, sizeof(rx_buffer), NULL);
-            //
-            // /* prints the deserialized object. */
-            // msgpack_object obj = msg.data;
-            // msgpack_object_print(stdout,
-            //                      obj); /*=> ["Hello", "MessagePack", 12345]
-            //                      */
+            if (!status) {
+                printf("Decode failed: %s\n", PB_GET_ERROR(&stream));
+            }
         }
-
-        // UdpCmd_t rx_packet;
-
-        // Place onto relevant queue
-        // switch (rx_packet.event_id) {
-        //     case CMD_VEL_RX:
-        //         ESP_LOGI(TAG, "GOT RX PACKET");
-        //         break;
-        //     default:
-        //         break;
-        // }
     }
 }
 
@@ -194,6 +180,7 @@ void socket_mgr_init()
                             10,
                             NULL,
                             APP_CPU_NUM);
+
     xTaskCreatePinnedToCore(socket_rx_task,
                             "socket_rx_task",
                             SOCKET_TX_TASK_STACK_SIZE,
