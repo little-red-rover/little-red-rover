@@ -1,0 +1,3 @@
+[submodule "SOFTWARE/esp32_firmware/components/msgpack/msgpack-c"]
+	path = SOFTWARE/esp32_firmware/components/msgpack/msgpack-c
+	url = https://github.com/msgpack/msgpack-c.git
