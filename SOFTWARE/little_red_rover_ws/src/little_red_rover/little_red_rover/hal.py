@@ -6,9 +6,10 @@ from sensor_msgs.msg._joint_state import JointState
 from sensor_msgs.msg._laser_scan import LaserScan
 from geometry_msgs.msg._twist import Twist
 
+import little_red_rover.pb.messages_pb2 as messages
+
 import threading
 import socket
-import msgpack
 
 # LRR Hardware Abstraction Layer (HAL)
 
@@ -21,9 +22,6 @@ class HAL(Node):
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", 8001))
-
-        self.packer = msgpack.Packer()
-        self.unpacker = msgpack.Unpacker()
 
         self.subscription = self.create_subscription(
             Twist, "cmd_vel", self.cmd_vel_callback, qos_profile_sensor_data
@@ -41,18 +39,19 @@ class HAL(Node):
     def run_loop(self):
         while True:
             data = self.socket.recv(1500)
-            self.unpacker.feed(data)
-            for o in self.unpacker:
-                # if o[0]
-                pass
 
             print("received message: %s" % data)
 
     def cmd_vel_callback(self, msg: Twist):
+        packet = messages.UdpPacket()
+        packet.cmd_vel.v = msg.linear.x
+        packet.cmd_vel.w = msg.angular.z
+
         self.socket.sendto(
-            self.packer.pack([msg.linear.x, msg.angular.z]),
+            packet.SerializeToString(),
             ("192.168.4.1", 8001),
         )
+        self.get_logger().info("Got cmd vel msg %f, %f" % (msg.linear.x, msg.angular.z))
 
 
 def main(args=None):
