@@ -19,9 +19,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <rcl/rcl.h>
-#include <rclc/executor_handle.h>
-
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/pulse_cnt.h"
@@ -32,6 +29,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
 
 // Anything above audible is fine

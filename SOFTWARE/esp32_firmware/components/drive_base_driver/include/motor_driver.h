@@ -4,9 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <rcl/rcl.h>
-#include <rclc/executor_handle.h>
-
 #include "driver/pulse_cnt.h"
 #include "hal/ledc_types.h"
 #include "pid_ctrl.h"

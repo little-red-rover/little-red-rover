@@ -12,10 +12,6 @@
 
 #include "driver/i2c_master.h"
 
-#include <rcl/rcl.h>
-
-#include "micro_ros_mgr.h"
-
 #define IMU_TASK_STACK_SIZE (2048)
 
 #define SCL_PIN 1
@@ -23,7 +19,6 @@
 
 static const char *TAG = "imu driver";
 
-rcl_publisher_t *imu_publisher;
 i2c_master_dev_handle_t imu_i2c_handle;
 
 void readRegisters(uint8_t address, uint8_t *data, size_t length)
@@ -56,9 +51,6 @@ void writeRegisters(uint8_t address, uint8_t *values, size_t length)
 
 static void imu_driver_task(void *arg)
 {
-    while (get_uros_state() != AGENT_CONNECTED) {
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
     while (1) {
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
