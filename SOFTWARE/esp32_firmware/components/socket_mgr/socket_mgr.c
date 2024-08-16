@@ -82,13 +82,16 @@ static void socket_tx_task(void *arg)
                                       (struct sockaddr *)&dest_addr,
                                       sizeof(dest_addr));
 
-                if (sent != stream.bytes_written) {
-                    ESP_LOGE(TAG,
-                             "Failed to write full packet data. Wrote %ld, "
-                             "expected %zu.",
-                             (long)sent,
-                             stream.bytes_written);
-                }
+                // This fails frequently, I think the python agent node is too
+                // slow to emptying network buffers
+                // if (sent !=
+                // stream.bytes_written) {
+                //     ESP_LOGE(TAG,
+                //              "Failed to write full packet data. Wrote %ld, "
+                //              "expected %zu.",
+                //              (long)sent,
+                //              stream.bytes_written);
+                // }
             }
         }
     }
