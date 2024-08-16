@@ -5,7 +5,6 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg._joint_state import JointState
 from sensor_msgs.msg._laser_scan import LaserScan
 from geometry_msgs.msg._twist import Twist
-from std_msgs.msg._header import Header
 
 import little_red_rover.pb.messages_pb2 as messages
 
@@ -44,7 +43,8 @@ class HAL(Node):
             packet.ParseFromString(data)
             if packet.HasField("laser"):
                 msg = LaserScan()
-                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.stamp.sec = packet.joint_states.time.sec
+                msg.header.stamp.nanosec = packet.joint_states.time.nanosec
                 msg.header.frame_id = "lidar_frame"
                 msg.angle_min = packet.laser.angle_min
                 msg.angle_max = packet.laser.angle_max
@@ -55,6 +55,17 @@ class HAL(Node):
                 msg.ranges = packet.laser.ranges
                 msg.intensities = packet.laser.intensities
                 self.scan_publisher.publish(msg)
+            elif packet.HasField("joint_states"):
+                msg = JointState()
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.stamp.sec = packet.joint_states.time.sec
+                msg.header.stamp.nanosec = packet.joint_states.time.nanosec
+                msg.header.frame_id = "robot_body"
+                msg.name = packet.joint_states.name
+                msg.effort = packet.joint_states.effort
+                msg.position = packet.joint_states.position
+                msg.velocity = packet.joint_states.velocity
+                self.joint_state_publisher.publish(msg)
 
     def cmd_vel_callback(self, msg: Twist):
         packet = messages.UdpPacket()

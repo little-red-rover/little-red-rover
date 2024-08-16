@@ -66,33 +66,32 @@ struct sockaddr_in dest_addr;
 static void socket_tx_task(void *arg)
 {
     UdpPacket msg;
+
     while (1) {
         if (xQueueReceive(tx_queue, (void *)&msg, portMAX_DELAY) == pdTRUE) {
-            if (msg.has_laser) {
-                pb_ostream_t stream =
-                  pb_ostream_from_buffer(tx_buffer, sizeof(tx_buffer));
-                bool status = pb_encode(&stream, UdpPacket_fields, &msg);
-                if (!status) {
-                    ESP_LOGE(TAG, "Failed to serialize laser message.");
-                }
-                ssize_t sent = sendto(socket_id,
-                                      tx_buffer,
-                                      stream.bytes_written,
-                                      0,
-                                      (struct sockaddr *)&dest_addr,
-                                      sizeof(dest_addr));
-
-                // This fails frequently, I think the python agent node is too
-                // slow to emptying network buffers
-                // if (sent !=
-                // stream.bytes_written) {
-                //     ESP_LOGE(TAG,
-                //              "Failed to write full packet data. Wrote %ld, "
-                //              "expected %zu.",
-                //              (long)sent,
-                //              stream.bytes_written);
-                // }
+            pb_ostream_t stream =
+              pb_ostream_from_buffer(tx_buffer, sizeof(tx_buffer));
+            bool status = pb_encode(&stream, UdpPacket_fields, &msg);
+            if (!status) {
+                ESP_LOGE(TAG, "Failed to serialize message.");
             }
+            ssize_t sent = sendto(socket_id,
+                                  tx_buffer,
+                                  stream.bytes_written,
+                                  0,
+                                  (struct sockaddr *)&dest_addr,
+                                  sizeof(dest_addr));
+
+            // This fails frequently, I think the python agent node is too
+            // slow to empty network buffers
+            // if (sent !=
+            // stream.bytes_written) {
+            //     ESP_LOGE(TAG,
+            //              "Failed to write full packet data. Wrote %ld, "
+            //              "expected %zu.",
+            //              (long)sent,
+            //              stream.bytes_written);
+            // }
         }
     }
 }
@@ -118,6 +117,7 @@ static void socket_rx_task(void *arg)
         } else {
             pb_istream_t stream = pb_istream_from_buffer(rx_buffer, len);
 
+            // TODO: Get rid of the union stuff, just pass the UdpPacket message
             const pb_msgdesc_t *type = decode_unionmessage_type(&stream);
             bool status = false;
 

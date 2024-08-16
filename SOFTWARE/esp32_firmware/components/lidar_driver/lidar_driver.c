@@ -119,7 +119,6 @@ void publish_scan(const LiDARFrame *scan)
     scan_msg.laser.time.sec = (int32_t)ts.tv_sec;
     scan_msg.laser.time.nanosec = (int32_t)ts.tv_nsec;
 
-    // ESP_LOGI(TAG, "%f\n", scan_msg.laser.range_max);
     if (tx_queue != NULL &&
         xQueueSend(tx_queue, (void *)&scan_msg, 10) != pdTRUE) {
         ESP_LOGE(TAG, "Failed to push scan onto queue");

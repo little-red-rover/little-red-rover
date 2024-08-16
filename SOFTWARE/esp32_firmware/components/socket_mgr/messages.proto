@@ -32,7 +32,7 @@ message LaserScan
 message JointStates
 {
     TimeStamp time = 1;
-    repeated string name = 2 [(nanopb).max_count = 2];
+    repeated string name = 2 [(nanopb).max_count = 2, (nanopb).max_length = 15];
     repeated double position = 3 [(nanopb).max_count = 2];
     repeated double velocity = 4 [(nanopb).max_count = 2];
     repeated double effort = 5 [(nanopb).max_count = 2];

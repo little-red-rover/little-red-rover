@@ -8,6 +8,7 @@
 #include "esp_timer.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include "motor_driver.h"
@@ -68,6 +69,8 @@ static const char *TAG = "drive_base_driver";
 motor_handle_t left_motor_handle;
 motor_handle_t right_motor_handle;
 
+UdpPacket wheel_state_msg;
+
 static void set_drive_base_enabled(bool enable)
 {
     set_motor_enabled(&left_motor_handle, enable);
@@ -93,25 +96,29 @@ void cmd_vel_callback(void *cmd)
 
 void wheel_state_publish_timer_callback()
 {
-    // struct timespec ts;
-    // clock_gettime(CLOCK_REALTIME, &ts);
-    // wheel_state_msg.header.stamp.sec = ts.tv_sec;
-    // wheel_state_msg.header.stamp.nanosec = ts.tv_nsec;
-    //
-    // wheel_state_msg.position.data[0] = left_motor_handle.encoder.position;
-    // wheel_state_msg.velocity.data[0] = left_motor_handle.encoder.velocity;
-    // wheel_state_msg.effort.data[0] =
-    // (double)left_motor_handle.applied_effort;
-    //
-    // wheel_state_msg.position.data[1] = right_motor_handle.encoder.position;
-    // wheel_state_msg.velocity.data[1] = right_motor_handle.encoder.velocity;
-    // wheel_state_msg.effort.data[1] =
-    // (double)right_motor_handle.applied_effort;
-    //
-    // if (get_uros_state() == AGENT_CONNECTED) {
-    //     RCSOFTCHECK(rcl_publish(wheel_state_publisher, &wheel_state_msg,
-    //     NULL));
-    // }
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    wheel_state_msg.joint_states.time.sec = ts.tv_sec;
+    wheel_state_msg.joint_states.time.nanosec = ts.tv_nsec;
+
+    wheel_state_msg.joint_states.position[0] =
+      left_motor_handle.encoder.position;
+    wheel_state_msg.joint_states.velocity[0] =
+      left_motor_handle.encoder.velocity;
+    wheel_state_msg.joint_states.effort[0] =
+      (double)left_motor_handle.applied_effort;
+
+    wheel_state_msg.joint_states.position[1] =
+      right_motor_handle.encoder.position;
+    wheel_state_msg.joint_states.velocity[1] =
+      right_motor_handle.encoder.velocity;
+    wheel_state_msg.joint_states.effort[1] =
+      (double)right_motor_handle.applied_effort;
+
+    if (tx_queue != NULL &&
+        xQueueSend(tx_queue, (void *)&wheel_state_msg, 10) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to push scan onto queue");
+    }
 }
 
 static void drive_base_driver_task(void *arg)
@@ -140,6 +147,14 @@ static void drive_base_driver_task(void *arg)
                     RIGHT_ENCODER_PIN_B,
                     true);
 
+    esp_timer_create_args_t pub_timer_args = {
+        .callback = wheel_state_publish_timer_callback,
+        .name = "wheel_state_publish_timer"
+    };
+    esp_timer_handle_t pub_timer_handle;
+    ESP_ERROR_CHECK(esp_timer_create(&pub_timer_args, &pub_timer_handle));
+    esp_timer_start_periodic(pub_timer_handle, PUBLISHER_LOOP_PERIOD_MS * 1000);
+
     set_drive_base_enabled(true);
 
     while (1) {
@@ -153,6 +168,16 @@ void drive_base_driver_init()
 {
     // AGENT SETUP
     register_callback(cmd_vel_callback, eTwistCmd);
+
+    wheel_state_msg.has_joint_states = true;
+
+    wheel_state_msg.joint_states.name_count = 2;
+    wheel_state_msg.joint_states.velocity_count = 2;
+    wheel_state_msg.joint_states.position_count = 2;
+    wheel_state_msg.joint_states.effort_count = 2;
+
+    strcpy(wheel_state_msg.joint_states.name[0], "wheel_left");
+    strcpy(wheel_state_msg.joint_states.name[1], "wheel_right");
 
     // START TASK
     xTaskCreatePinnedToCore(drive_base_driver_task,

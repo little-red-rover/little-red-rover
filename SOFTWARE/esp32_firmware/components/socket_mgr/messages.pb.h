@@ -41,7 +41,8 @@ typedef struct _LaserScan {
 typedef struct _JointStates {
     bool has_time;
     TimeStamp time;
-    pb_callback_t name;
+    pb_size_t name_count;
+    char name[2][16];
     pb_size_t position_count;
     double position[2];
     pb_size_t velocity_count;
@@ -68,12 +69,12 @@ extern "C" {
 #define TimeStamp_init_default                   {0, 0}
 #define TwistCmd_init_default                    {false, TimeStamp_init_default, 0, 0}
 #define LaserScan_init_default                   {false, TimeStamp_init_default, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
-#define JointStates_init_default                 {false, TimeStamp_init_default, {{NULL}, NULL}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
+#define JointStates_init_default                 {false, TimeStamp_init_default, 0, {"", ""}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_default                   {false, LaserScan_init_default, false, JointStates_init_default, false, TwistCmd_init_default}
 #define TimeStamp_init_zero                      {0, 0}
 #define TwistCmd_init_zero                       {false, TimeStamp_init_zero, 0, 0}
 #define LaserScan_init_zero                      {false, TimeStamp_init_zero, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
-#define JointStates_init_zero                    {false, TimeStamp_init_zero, {{NULL}, NULL}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
+#define JointStates_init_zero                    {false, TimeStamp_init_zero, 0, {"", ""}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_zero                      {false, LaserScan_init_zero, false, JointStates_init_zero, false, TwistCmd_init_zero}
 
 /* Field tags (for use in manual encoding/decoding) */
@@ -133,11 +134,11 @@ X(a, STATIC,   REPEATED, FLOAT,    intensities,      10)
 
 #define JointStates_FIELDLIST(X, a) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  time,              1) \
-X(a, CALLBACK, REPEATED, STRING,   name,              2) \
+X(a, STATIC,   REPEATED, STRING,   name,              2) \
 X(a, STATIC,   REPEATED, DOUBLE,   position,          3) \
 X(a, STATIC,   REPEATED, DOUBLE,   velocity,          4) \
 X(a, STATIC,   REPEATED, DOUBLE,   effort,            5)
-#define JointStates_CALLBACK pb_default_field_callback
+#define JointStates_CALLBACK NULL
 #define JointStates_DEFAULT NULL
 #define JointStates_time_MSGTYPE TimeStamp
 
@@ -165,12 +166,12 @@ extern const pb_msgdesc_t UdpPacket_msg;
 #define UdpPacket_fields &UdpPacket_msg
 
 /* Maximum encoded size of messages (where known) */
-/* JointStates_size depends on runtime parameters */
-/* UdpPacket_size depends on runtime parameters */
+#define JointStates_size                         107
 #define LaserScan_size                           174
-#define MESSAGES_PB_H_MAX_SIZE                   LaserScan_size
+#define MESSAGES_PB_H_MAX_SIZE                   UdpPacket_size
 #define TimeStamp_size                           17
 #define TwistCmd_size                            29
+#define UdpPacket_size                           317
 
 #ifdef __cplusplus
 } /* extern "C" */
