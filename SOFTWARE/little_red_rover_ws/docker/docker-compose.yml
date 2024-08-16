@@ -1,5 +1,3 @@
-version: '3'
-
 services:
     workspace:
         image: ros2_workspace
@@ -13,5 +11,5 @@ services:
         ports:
             - "9002:9002" # gzweb
             - "9090:9090" # rosbridge
-            - "8001:8001/udp" # microros agent -> rover
+            - "8001:8001/udp" # agent -> rover
             - "8765:8765" # foxglove bridge

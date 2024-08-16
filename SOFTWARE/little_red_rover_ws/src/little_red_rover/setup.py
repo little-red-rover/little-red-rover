@@ -33,6 +33,7 @@ setup(
         "console_scripts": [
             "base = little_red_rover.base:main",
             "odometry_publisher = little_red_rover.odometry_publisher:main",
+            "hal = little_red_rover.hal:main",
         ],
     },
 )

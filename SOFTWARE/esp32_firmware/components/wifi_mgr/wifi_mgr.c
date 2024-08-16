@@ -215,23 +215,23 @@ esp_err_t get_remote_ip(httpd_req_t *req, struct sockaddr_in6 *addr_in)
 
 static esp_err_t get_agent_ip_handler(httpd_req_t *req)
 {
-    char *micro_ros_agent_ip;
+    char *agent_ip;
     struct sockaddr_in6 addr_in;
     if (get_remote_ip(req, &addr_in) == ESP_OK) {
-        micro_ros_agent_ip = inet_ntoa(addr_in.sin6_addr.un.u32_addr[3]);
-        ESP_LOGI(TAG, "Remote IP is %s", micro_ros_agent_ip);
+        agent_ip = inet_ntoa(addr_in.sin6_addr.un.u32_addr[3]);
+        ESP_LOGI(TAG, "Remote IP is %s", agent_ip);
     } else {
         return ESP_FAIL;
     }
 
-    httpd_resp_sendstr(req, micro_ros_agent_ip);
+    httpd_resp_sendstr(req, agent_ip);
 
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
-        err = nvs_set_str(my_handle, "uros_ag_ip", micro_ros_agent_ip);
+        err = nvs_set_str(my_handle, "uros_ag_ip", agent_ip);
         if (err != ESP_OK) {
             ESP_LOGE(TAG,
                      "Error (%s) writing uros agent ip to flash.",

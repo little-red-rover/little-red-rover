@@ -19,9 +19,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <rcl/rcl.h>
-#include <rclc/executor_handle.h>
-
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/pulse_cnt.h"
@@ -32,6 +29,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+
 #define PWM_TIMER_RESOLUTION LEDC_TIMER_10_BIT
 
 // Anything above audible is fine
@@ -40,10 +38,6 @@
 // Minimum % duty that must be applied to affect any motion
 // Inputs below this level are ignored
 #define HYSTERESIS 0.25
-
-// Max change to motor power per pid cycle
-// Can be used to reduce voltage sag from current surges
-#define MAX_JERK 0.1
 
 #define PID_LOOP_PERIOD_MS 10.0
 
@@ -130,9 +124,7 @@ void pid_callback(void *arg)
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_effort));
 
-    motor->applied_effort = clamp(motor->cmd_effort,
-                                  motor->applied_effort - MAX_JERK,
-                                  motor->applied_effort + MAX_JERK);
+    motor->applied_effort = motor->cmd_effort;
 
     set_motor_power(motor, motor->applied_effort);
 
@@ -205,7 +197,7 @@ void configure_motor(motor_handle_t *motor,
 
     // PID
     pid_ctrl_parameter_t pid_runtime_param = {
-        .kp = 0.7, // TODO: tune these (maybe make them uROS controlled?)
+        .kp = 0.3, // TODO: tune these (maybe make them uROS controlled?)
         .ki = 0.3,
         .kd = 0.0,
         .cal_type = PID_CAL_TYPE_POSITIONAL,

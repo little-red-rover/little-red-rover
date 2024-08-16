@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+message TimeStamp {
+  int32 sec = 1;
+  uint32 nanosec = 2;
+}
+
+message TwistCmd {
+  TimeStamp time = 1;
+  float v = 2;
+  float w = 3;
+}
+
+message LaserScan {
+  TimeStamp time = 1;
+  float angle_min = 2;
+  float angle_max = 3;
+  float angle_increment = 4;
+  float time_increment = 5;
+  float scan_time = 6;
+  float range_min = 7;
+  float range_max = 8;
+  repeated float ranges = 9;
+  repeated float intensities = 10;
+}
+
+message JointStates {
+  TimeStamp time = 1;
+  repeated string name = 2;
+  repeated double position = 3;
+  repeated double velocity = 4;
+  repeated double effort = 5;
+}
+
+message UdpPacket {
+  optional LaserScan laser = 1;
+  optional JointStates joint_states = 2;
+  optional TwistCmd cmd_vel = 3;
+}
