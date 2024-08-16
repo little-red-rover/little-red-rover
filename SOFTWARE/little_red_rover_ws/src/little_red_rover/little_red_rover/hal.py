@@ -5,6 +5,7 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg._joint_state import JointState
 from sensor_msgs.msg._laser_scan import LaserScan
 from geometry_msgs.msg._twist import Twist
+from std_msgs.msg._header import Header
 
 import little_red_rover.pb.messages_pb2 as messages
 
@@ -39,8 +40,22 @@ class HAL(Node):
     def run_loop(self):
         while True:
             data = self.socket.recv(1500)
-
-            print("received message: %s" % data)
+            packet = messages.UdpPacket()
+            packet.FromString(data)
+            print(packet)
+            if packet.HasField("laser"):
+                msg = LaserScan()
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.frame_id = "lidar_frame"
+                msg.angle_min = packet.laser.angle_min
+                msg.angle_max = packet.laser.angle_max
+                msg.range_min = packet.laser.range_min
+                msg.range_max = packet.laser.range_max
+                msg.time_increment = packet.laser.time_increment
+                msg.angle_increment = packet.laser.angle_increment
+                msg.ranges = packet.laser.ranges
+                msg.intensities = packet.laser.intensities
+                self.scan_publisher.publish(msg)
 
     def cmd_vel_callback(self, msg: Twist):
         packet = messages.UdpPacket()
@@ -51,7 +66,7 @@ class HAL(Node):
             packet.SerializeToString(),
             ("192.168.4.1", 8001),
         )
-        self.get_logger().info("Got cmd vel msg %f, %f" % (msg.linear.x, msg.angular.z))
+        # self.get_logger().info("Got cmd vel msg %f, %f" % (msg.linear.x, msg.angular.z))
 
 
 def main(args=None):

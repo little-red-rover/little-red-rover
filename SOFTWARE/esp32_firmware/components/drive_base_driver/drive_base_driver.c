@@ -13,6 +13,9 @@
 #include "motor_driver.h"
 #include "soc/soc.h"
 
+#include "messages.pb.h"
+#include "socket_mgr.h"
+
 #define DRIVE_BASE_TASK_SIZE (4096)
 
 // PIN DEFINITIONS
@@ -77,17 +80,15 @@ static void set_diff_drive(float left, float right)
     set_motor_velocity(&right_motor_handle, right);
 }
 
-void cmd_vel_callback(const void *msgin)
+void cmd_vel_callback(void *cmd)
 {
-    // const geometry_msgs__msg__Twist *msg =
-    //   (const geometry_msgs__msg__Twist *)msgin;
-    // double v = msg->linear.x;
-    // double w = msg->angular.z;
-    //
-    // //
+    TwistCmd twist_cmd = *((TwistCmd *)cmd);
+    double v = twist_cmd.v;
+    double w = twist_cmd.w;
+
     // https://control.ros.org/master/doc/ros2_controllers/doc/mobile_robot_kinematics.html#differential-drive-robot
-    // set_diff_drive((v - ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER),
-    //                (v + ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER));
+    set_diff_drive((v - ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER),
+                   (v + ((w * WHEEL_TRACK) / 2.0)) * (2.0 / WHEEL_DIAMETER));
 }
 
 void wheel_state_publish_timer_callback()
@@ -150,55 +151,8 @@ static void drive_base_driver_task(void *arg)
 
 void drive_base_driver_init()
 {
-    // MICRO ROS SETUP
-    // cmd_vel_msg = geometry_msgs__msg__Twist__create();
-    // cmd_vel_subscription = register_subscription(
-    //   ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-    //   "cmd_vel",
-    //   cmd_vel_msg,
-    //   &cmd_vel_callback);
-    //
-    // static micro_ros_utilities_memory_conf_t conf = { 0 };
-    //
-    // conf.max_string_capacity = 15;
-    // conf.max_ros2_type_sequence_capacity = 3;
-    // conf.max_basic_type_sequence_capacity = 3;
-    //
-    // micro_ros_utilities_create_message_memory(
-    //   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
-    //   &wheel_state_msg,
-    //   conf);
-    //
-    // wheel_state_msg.header.frame_id.size = 10;
-    // wheel_state_msg.header.frame_id.capacity = 11;
-    // wheel_state_msg.header.frame_id.data = "robot_body";
-    //
-    // wheel_state_msg.name.size = 2;
-    // wheel_state_msg.name.capacity = 2;
-    //
-    // wheel_state_msg.name.data[0].size = 10;
-    // wheel_state_msg.name.data[0].capacity = 11;
-    // wheel_state_msg.name.data[0].data = "wheel_left";
-    //
-    // wheel_state_msg.name.data[1].size = 11;
-    // wheel_state_msg.name.data[1].capacity = 12;
-    // wheel_state_msg.name.data[1].data = "wheel_right";
-    //
-    // wheel_state_msg.position.size = 2;
-    // wheel_state_msg.position.capacity = 2;
-    //
-    // wheel_state_msg.velocity.size = 2;
-    // wheel_state_msg.velocity.capacity = 2;
-    //
-    // wheel_state_msg.effort.size = 2;
-    // wheel_state_msg.effort.capacity = 2;
-    //
-    // wheel_state_publisher = register_publisher(
-    //   ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, JointState),
-    //   "joint_states");
-    //
-    // register_timer(wheel_state_publish_timer_callback,
-    //                PUBLISHER_LOOP_PERIOD_MS * 1000000);
+    // AGENT SETUP
+    register_callback(cmd_vel_callback, eTwistCmd);
 
     // START TASK
     xTaskCreatePinnedToCore(drive_base_driver_task,

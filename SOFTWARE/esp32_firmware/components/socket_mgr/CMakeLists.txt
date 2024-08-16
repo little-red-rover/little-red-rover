@@ -10,5 +10,5 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
 endif()
 
 idf_component_register(SRCS  "socket_mgr.c" "pb_utils.c" "${pb_csrcs}"
-                       INCLUDE_DIRS include
+                       INCLUDE_DIRS include .
                        REQUIRES nvs_flash nanopb)

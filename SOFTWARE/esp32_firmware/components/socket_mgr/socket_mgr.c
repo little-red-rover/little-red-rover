@@ -11,13 +11,13 @@
 
 #include "messages.pb.h"
 #include "pb.h"
-#include "pb_common.h"
 #include "pb_decode.h"
+#include "pb_encode.h"
 #include "pb_utils.h"
 
 #define SOCKET_TX_TASK_STACK_SIZE 4096
 #define SOCKET_RX_TASK_STACK_SIZE 4096
-#define MAX_RX_QUEUES 2
+#define MAX_RX_CALLBACKS 1
 
 static const char *TAG = "SOCKET_MGR";
 
@@ -54,24 +54,7 @@ esp_err_t get_agent_ip()
 }
 
 static int socket_id;
-
-typedef enum UDP_TX_PACKET_TYPES
-{
-    LIDAR_TX,
-    IMU_TX,
-} eUdpTxPacket_t;
-
-typedef enum UDP_RX_PACKET_TYPES
-{
-    CMD_VEL_RX,
-} eUdpRxPacket_t;
-
-typedef struct UDP_COMMANDS
-{
-    eUdpTxPacket_t event_id;
-    void *msg_data;
-    size_t msg_size;
-} UdpCmd_t;
+static pb_ostream_t output;
 
 QueueHandle_t tx_queue;
 
@@ -108,9 +91,8 @@ static void socket_tx_task(void *arg)
     }
 }
 
-size_t num_rx_queues;
-QueueHandle_t rx_queues[MAX_RX_QUEUES];
 static unsigned char rx_buffer[1500];
+static void (*rx_callbacks[MAX_RX_CALLBACKS])(void *);
 
 static void socket_rx_task(void *arg)
 {
@@ -119,7 +101,7 @@ static void socket_rx_task(void *arg)
     while (1) {
         int len = recvfrom(socket_id,
                            rx_buffer,
-                           sizeof(rx_buffer) - 1,
+                           sizeof(rx_buffer),
                            0,
                            (struct sockaddr *)&source_addr,
                            &socklen);
@@ -137,7 +119,7 @@ static void socket_rx_task(void *arg)
                 TwistCmd msg = {};
                 status =
                   decode_unionmessage_contents(&stream, TwistCmd_fields, &msg);
-                printf("Got CmdVel: %f, %f\n", msg.v, msg.w);
+                (*(rx_callbacks[eTwistCmd]))(&msg);
             }
 
             if (!status) {
@@ -145,6 +127,11 @@ static void socket_rx_task(void *arg)
             }
         }
     }
+}
+
+void register_callback(void (*callback)(void *), eRxMsgTypes type)
+{
+    rx_callbacks[type] = callback;
 }
 
 void socket_mgr_init()
