@@ -17,10 +17,9 @@ LRR is perfect for robotics hobbyists interested in elevating their work. Breaki
 Little Red Rover is currently in developement, and the specs below may or may not be implemented already. For now, this section serves as a roadmap.
 
 ### Software ([README](https://github.com/usedhondacivic/little_red_rover/tree/main/SOFTWARE))
-* ESP32 onboard, running [micro-ROS](https://micro.ros.org/)
-    * Publishes sensor data and reacts to movement commands
-* Dockerized development environment runs on any OS and communicates with the rover wirelessly over UDP
-    * Interact with the robot just as you would any ROS node
+* ESP32 onboard. Publishes sensor data, encoded using protobuf, over a UDP BSD socket
+* Dockerized development environment runs on any OS and communicates with the rover wirelessly
+* Hardware abstraction node provided for handling robot connection and republishing deserialized messages
 
 ### Hardware ([README](https://github.com/usedhondacivic/little_red_rover/tree/main/HARDWARE))
 * [FHL-LD20 Lidar](https://www.youyeetoo.com/products/youyeetoo-fhl-ld20)
@@ -42,7 +41,7 @@ Little Red Rover is currently in developement, and the specs below may or may no
 * Documentation (contents of the `/docs` folder)
     * Creative Commons Zero v1.0 Universal
 
-If these terms don't fit your use case, please reach out at michael@michael-crum.com.
+If these terms don't work for you, please reach out at michael@michael-crum.com.
 
 ## Thanks
 
