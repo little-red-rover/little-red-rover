@@ -38,7 +38,7 @@
 
 // Both in meters
 #define WHEEL_DIAMETER 0.060960
-#define WHEEL_TRACK 0.11439
+#define WHEEL_TRACK 0.13948
 
 #define RCCHECK(fn)                                                            \
     {                                                                          \
@@ -170,6 +170,7 @@ void drive_base_driver_init()
     register_callback(cmd_vel_callback, eTwistCmd);
 
     wheel_state_msg.has_joint_states = true;
+    wheel_state_msg.joint_states.has_time = true;
 
     wheel_state_msg.joint_states.name_count = 2;
     wheel_state_msg.joint_states.velocity_count = 2;

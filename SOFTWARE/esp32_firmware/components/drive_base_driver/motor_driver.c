@@ -41,7 +41,7 @@
 
 #define PID_LOOP_PERIOD_MS 10.0
 
-#define PULSES_PER_ROTATION 580.0
+#define PULSES_PER_ROTATION 590.0
 #define PULSES_TO_RAD(pulses)                                                  \
     (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
 

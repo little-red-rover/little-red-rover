@@ -75,6 +75,7 @@ static void socket_tx_task(void *arg)
             if (!status) {
                 ESP_LOGE(TAG, "Failed to serialize message.");
             }
+
             ssize_t sent = sendto(socket_id,
                                   tx_buffer,
                                   stream.bytes_written,

@@ -118,7 +118,25 @@ def generate_launch_description():
             executable="odometry_publisher",
             output="both",
             parameters=[],
-        )
+        ),
+        Node(
+            package="robot_localization",
+            executable="ekf_node",
+            name="ekf_filter_node",
+            output="screen",
+            parameters=[
+                PathJoinSubstitution(
+                    [
+                        get_package_share_directory("little_red_rover"),
+                        "config",
+                        "ekf.yaml",
+                    ]
+                ),
+                {
+                    "use_sim_time": run_sim,
+                },
+            ],
+        ),
     ]
 
     return LaunchDescription(config + robot_launch + teleop + visualization + odometry)

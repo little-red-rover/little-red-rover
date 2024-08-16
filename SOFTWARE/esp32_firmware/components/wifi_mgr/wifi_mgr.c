@@ -9,6 +9,7 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_sntp.h"
 #include "esp_spiffs.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
@@ -386,6 +387,11 @@ void wifi_mgr_init()
     ESP_LOGI(TAG, "Wifi started successfully");
     ip_napt_enable(esp_ip4addr_aton(DEFAULT_AP_IP), 1);
     ESP_LOGI(TAG, "ip_napt enabled");
+
+    // Setting up time sync
+    esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_init();
 
     /* Wait for Wi-Fi connection */
     TickType_t timeout = WIFI_CONNECTION_TIMEOUT_MS / portTICK_PERIOD_MS;

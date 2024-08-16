@@ -21,6 +21,7 @@ class HAL(Node):
         super().__init__("hal")
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(("0.0.0.0", 8001))
 
         self.subscription = self.create_subscription(
@@ -43,9 +44,9 @@ class HAL(Node):
             packet.ParseFromString(data)
             if packet.HasField("laser"):
                 msg = LaserScan()
-                msg.header.stamp.sec = packet.joint_states.time.sec
-                msg.header.stamp.nanosec = packet.joint_states.time.nanosec
-                msg.header.frame_id = "lidar_frame"
+                msg.header.stamp.sec = packet.laser.time.sec
+                msg.header.stamp.nanosec = packet.laser.time.nanosec
+                msg.header.frame_id = "lidar"
                 msg.angle_min = packet.laser.angle_min
                 msg.angle_max = packet.laser.angle_max
                 msg.range_min = packet.laser.range_min
@@ -57,7 +58,6 @@ class HAL(Node):
                 self.scan_publisher.publish(msg)
             elif packet.HasField("joint_states"):
                 msg = JointState()
-                msg.header.stamp = self.get_clock().now().to_msg()
                 msg.header.stamp.sec = packet.joint_states.time.sec
                 msg.header.stamp.nanosec = packet.joint_states.time.nanosec
                 msg.header.frame_id = "robot_body"
@@ -76,7 +76,6 @@ class HAL(Node):
             packet.SerializeToString(),
             ("192.168.4.1", 8001),
         )
-        # self.get_logger().info("Got cmd vel msg %f, %f" % (msg.linear.x, msg.angular.z))
 
 
 def main(args=None):
