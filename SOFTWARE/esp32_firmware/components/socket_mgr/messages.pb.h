@@ -32,17 +32,22 @@ typedef struct _LaserScan {
     float scan_time;
     float range_min;
     float range_max;
-    pb_callback_t ranges;
-    pb_callback_t intensities;
+    pb_size_t ranges_count;
+    float ranges[12];
+    pb_size_t intensities_count;
+    float intensities[12];
 } LaserScan;
 
 typedef struct _JointStates {
     bool has_time;
     TimeStamp time;
     pb_callback_t name;
-    pb_callback_t position;
-    pb_callback_t velocity;
-    pb_callback_t effort;
+    pb_size_t position_count;
+    double position[2];
+    pb_size_t velocity_count;
+    double velocity[2];
+    pb_size_t effort_count;
+    double effort[2];
 } JointStates;
 
 typedef struct _UdpPacket {
@@ -62,13 +67,13 @@ extern "C" {
 /* Initializer values for message structs */
 #define TimeStamp_init_default                   {0, 0}
 #define TwistCmd_init_default                    {false, TimeStamp_init_default, 0, 0}
-#define LaserScan_init_default                   {false, TimeStamp_init_default, 0, 0, 0, 0, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define JointStates_init_default                 {false, TimeStamp_init_default, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}}
+#define LaserScan_init_default                   {false, TimeStamp_init_default, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define JointStates_init_default                 {false, TimeStamp_init_default, {{NULL}, NULL}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_default                   {false, LaserScan_init_default, false, JointStates_init_default, false, TwistCmd_init_default}
 #define TimeStamp_init_zero                      {0, 0}
 #define TwistCmd_init_zero                       {false, TimeStamp_init_zero, 0, 0}
-#define LaserScan_init_zero                      {false, TimeStamp_init_zero, 0, 0, 0, 0, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define JointStates_init_zero                    {false, TimeStamp_init_zero, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}}
+#define LaserScan_init_zero                      {false, TimeStamp_init_zero, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define JointStates_init_zero                    {false, TimeStamp_init_zero, {{NULL}, NULL}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_zero                      {false, LaserScan_init_zero, false, JointStates_init_zero, false, TwistCmd_init_zero}
 
 /* Field tags (for use in manual encoding/decoding) */
@@ -120,18 +125,18 @@ X(a, STATIC,   SINGULAR, FLOAT,    time_increment,    5) \
 X(a, STATIC,   SINGULAR, FLOAT,    scan_time,         6) \
 X(a, STATIC,   SINGULAR, FLOAT,    range_min,         7) \
 X(a, STATIC,   SINGULAR, FLOAT,    range_max,         8) \
-X(a, CALLBACK, REPEATED, FLOAT,    ranges,            9) \
-X(a, CALLBACK, REPEATED, FLOAT,    intensities,      10)
-#define LaserScan_CALLBACK pb_default_field_callback
+X(a, STATIC,   REPEATED, FLOAT,    ranges,            9) \
+X(a, STATIC,   REPEATED, FLOAT,    intensities,      10)
+#define LaserScan_CALLBACK NULL
 #define LaserScan_DEFAULT NULL
 #define LaserScan_time_MSGTYPE TimeStamp
 
 #define JointStates_FIELDLIST(X, a) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  time,              1) \
 X(a, CALLBACK, REPEATED, STRING,   name,              2) \
-X(a, CALLBACK, REPEATED, DOUBLE,   position,          3) \
-X(a, CALLBACK, REPEATED, DOUBLE,   velocity,          4) \
-X(a, CALLBACK, REPEATED, DOUBLE,   effort,            5)
+X(a, STATIC,   REPEATED, DOUBLE,   position,          3) \
+X(a, STATIC,   REPEATED, DOUBLE,   velocity,          4) \
+X(a, STATIC,   REPEATED, DOUBLE,   effort,            5)
 #define JointStates_CALLBACK pb_default_field_callback
 #define JointStates_DEFAULT NULL
 #define JointStates_time_MSGTYPE TimeStamp
@@ -160,10 +165,10 @@ extern const pb_msgdesc_t UdpPacket_msg;
 #define UdpPacket_fields &UdpPacket_msg
 
 /* Maximum encoded size of messages (where known) */
-/* LaserScan_size depends on runtime parameters */
 /* JointStates_size depends on runtime parameters */
 /* UdpPacket_size depends on runtime parameters */
-#define MESSAGES_PB_H_MAX_SIZE                   TwistCmd_size
+#define LaserScan_size                           174
+#define MESSAGES_PB_H_MAX_SIZE                   LaserScan_size
 #define TimeStamp_size                           17
 #define TwistCmd_size                            29
 

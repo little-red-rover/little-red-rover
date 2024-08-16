@@ -18,7 +18,7 @@ PB_BIND(LaserScan, LaserScan, AUTO)
 PB_BIND(JointStates, JointStates, AUTO)
 
 
-PB_BIND(UdpPacket, UdpPacket, AUTO)
+PB_BIND(UdpPacket, UdpPacket, 2)
 
 
 

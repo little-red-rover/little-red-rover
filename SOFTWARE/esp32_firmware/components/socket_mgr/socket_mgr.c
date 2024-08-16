@@ -4,8 +4,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
+#include <time.h>
 
 #include "esp_log.h"
+#include "freertos/projdefs.h"
 #include "lwip/sockets.h"
 #include "nvs.h"
 
@@ -14,6 +16,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "pb_utils.h"
+#include "portmacro.h"
 
 #define SOCKET_TX_TASK_STACK_SIZE 4096
 #define SOCKET_RX_TASK_STACK_SIZE 4096
@@ -54,40 +57,40 @@ esp_err_t get_agent_ip()
 }
 
 static int socket_id;
-static pb_ostream_t output;
 
-QueueHandle_t tx_queue;
+QueueHandle_t tx_queue = NULL;
+
+static unsigned char tx_buffer[1500];
+struct sockaddr_in dest_addr;
 
 static void socket_tx_task(void *arg)
 {
-    // int err = sendto(sock,
-    //                  payload,
-    //                  strlen(payload),
-    //                  0,
-    //                  (struct sockaddr *)&dest_addr,
-    //                  sizeof(dest_addr));
-    // if (err < 0) {
-    //     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-    //     break;
-    // }
-    // ESP_LOGI(TAG, "Message sent");
-
-    // UdpCmd_t tx_packet;
-    // while (1) {
-    //     // xQueueReceive(tx_queue, &tx_packet, portMAX_DELAY);
-    //
-    //     switch (tx_packet.event_id) {
-    //         case LIDAR_TX:
-    //             // Transmit over socket
-    //             ESP_LOGI(TAG, "GOT TX PACKET");
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
-
+    UdpPacket msg;
     while (1) {
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        if (xQueueReceive(tx_queue, (void *)&msg, portMAX_DELAY) == pdTRUE) {
+            if (msg.has_laser) {
+                pb_ostream_t stream =
+                  pb_ostream_from_buffer(tx_buffer, sizeof(tx_buffer));
+                bool status = pb_encode(&stream, UdpPacket_fields, &msg);
+                if (!status) {
+                    ESP_LOGE(TAG, "Failed to serialize laser message.");
+                }
+                ssize_t sent = sendto(socket_id,
+                                      tx_buffer,
+                                      stream.bytes_written,
+                                      0,
+                                      (struct sockaddr *)&dest_addr,
+                                      sizeof(dest_addr));
+
+                if (sent != stream.bytes_written) {
+                    ESP_LOGE(TAG,
+                             "Failed to write full packet data. Wrote %ld, "
+                             "expected %zu.",
+                             (long)sent,
+                             stream.bytes_written);
+                }
+            }
+        }
     }
 }
 
@@ -123,7 +126,7 @@ static void socket_rx_task(void *arg)
             }
 
             if (!status) {
-                printf("Decode failed: %s\n", PB_GET_ERROR(&stream));
+                ESP_LOGE(TAG, "Decode failed: %s\n", PB_GET_ERROR(&stream));
             }
         }
     }
@@ -140,11 +143,14 @@ void socket_mgr_init()
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 
-    struct sockaddr_in6 dest_addr;
-    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4->sin_family = AF_INET;
-    dest_addr_ip4->sin_port = htons(PORT);
+    dest_addr.sin_addr.s_addr = inet_addr(AGENT_IP);
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(PORT);
+
+    struct sockaddr_in src_addr;
+    src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    src_addr.sin_family = AF_INET;
+    src_addr.sin_port = htons(PORT);
 
     socket_id = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 
@@ -152,13 +158,15 @@ void socket_mgr_init()
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
     }
 
-    int err = bind(socket_id, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    int err = bind(socket_id, (struct sockaddr *)&src_addr, sizeof(src_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
     }
     ESP_LOGI(TAG, "Socket bound, port %d", PORT);
 
     ESP_LOGI(TAG, "Socket created, communicating with %s:%d", AGENT_IP, PORT);
+
+    tx_queue = xQueueCreate(25, sizeof(UdpPacket));
 
     xTaskCreatePinnedToCore(socket_tx_task,
                             "socket_tx_task",

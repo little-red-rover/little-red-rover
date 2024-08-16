@@ -6,13 +6,18 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 
 #include "lidar_driver.h"
+#include "portmacro.h"
 #include "soc/soc.h"
+
+#include "messages.pb.h"
+#include "socket_mgr.h"
 
 #include <math.h>
 
@@ -35,6 +40,8 @@ static const char *TAG = "lidar driver";
 #define POINT_PER_PACK 12
 #define HEADER 0x54
 #define VERLEN 0x2C
+
+UdpPacket scan_msg;
 
 typedef struct
 {
@@ -91,27 +98,32 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len)
 
 void publish_scan(const LiDARFrame *scan)
 {
-    // scan_msg.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
-    // scan_msg.angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
-    // if (scan_msg.angle_max < scan_msg.angle_min) {
-    //     scan_msg.angle_max = scan_msg.angle_max + 2 * M_PI;
-    // }
-    // scan_msg.angle_increment =
-    //   (scan_msg.angle_max - scan_msg.angle_min) / (POINT_PER_PACK - 1);
-    // scan_msg.time_increment =
-    //   scan_msg.angle_increment / deg_2_rad((float)(scan->speed));
-    //
-    // for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
-    //     scan_msg.ranges.data[i] = (float)(scan->points[i].distance) / 1000.0;
-    //     scan_msg.intensities.data[i] = (float)(scan->points[i].intensity);
-    // }
-    //
-    // struct timespec ts;
-    // clock_gettime(CLOCK_REALTIME, &ts);
-    // scan_msg.header.stamp.sec = (int32_t)ts.tv_sec;
-    // scan_msg.header.stamp.nanosec = (int32_t)ts.tv_nsec;
+    scan_msg.laser.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
+    scan_msg.laser.angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
+    if (scan_msg.laser.angle_max < scan_msg.laser.angle_min) {
+        scan_msg.laser.angle_max = scan_msg.laser.angle_max + 2 * M_PI;
+    }
+    scan_msg.laser.angle_increment =
+      (scan_msg.laser.angle_max - scan_msg.laser.angle_min) /
+      (POINT_PER_PACK - 1);
+    scan_msg.laser.time_increment =
+      scan_msg.laser.angle_increment / deg_2_rad((float)(scan->speed));
 
-    // return rcl_publish(lidar_publisher, &scan_msg, NULL);
+    for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
+        scan_msg.laser.ranges[i] = (float)(scan->points[i].distance) / 1000.0;
+        scan_msg.laser.intensities[i] = (float)(scan->points[i].intensity);
+    }
+
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    scan_msg.laser.time.sec = (int32_t)ts.tv_sec;
+    scan_msg.laser.time.nanosec = (int32_t)ts.tv_nsec;
+
+    // ESP_LOGI(TAG, "%f\n", scan_msg.laser.range_max);
+    if (tx_queue != NULL &&
+        xQueueSend(tx_queue, (void *)&scan_msg, 10) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to push scan onto queue");
+    }
 }
 
 static void lidar_driver_task(void *arg)
@@ -176,10 +188,16 @@ void lidar_driver_init()
     gpio_set_level(LIDAR_PWM, 1);
 
     // Pulled this from a logic analyzer, can't find it in the documentation
-    // scan_msg.scan_time = 0.001;
-    //
-    // scan_msg.range_min = 0.1;
-    // scan_msg.range_max = 8.0;
+    scan_msg.has_laser = true;
+    scan_msg.laser.has_time = true;
+
+    scan_msg.laser.scan_time = 0.001;
+
+    scan_msg.laser.range_min = 0.1;
+    scan_msg.laser.range_max = 8.0;
+
+    scan_msg.laser.ranges_count = POINT_PER_PACK;
+    scan_msg.laser.intensities_count = POINT_PER_PACK;
 
     xTaskCreatePinnedToCore(lidar_driver_task,
                             "lidar_driver_task",

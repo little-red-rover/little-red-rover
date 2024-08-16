@@ -41,8 +41,7 @@ class HAL(Node):
         while True:
             data = self.socket.recv(1500)
             packet = messages.UdpPacket()
-            packet.FromString(data)
-            print(packet)
+            packet.ParseFromString(data)
             if packet.HasField("laser"):
                 msg = LaserScan()
                 msg.header.stamp = self.get_clock().now().to_msg()

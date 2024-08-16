@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "nanopb.proto";
+
 message TimeStamp
 {
     int32 sec = 1;
@@ -23,17 +25,17 @@ message LaserScan
     float scan_time = 6;
     float range_min = 7;
     float range_max = 8;
-    repeated float ranges = 9;
-    repeated float intensities = 10;
+    repeated float ranges = 9 [(nanopb).max_count = 12];
+    repeated float intensities = 10 [(nanopb).max_count = 12];
 }
 
 message JointStates
 {
     TimeStamp time = 1;
-    repeated string name = 2;
-    repeated double position = 3;
-    repeated double velocity = 4;
-    repeated double effort = 5;
+    repeated string name = 2 [(nanopb).max_count = 2];
+    repeated double position = 3 [(nanopb).max_count = 2];
+    repeated double velocity = 4 [(nanopb).max_count = 2];
+    repeated double effort = 5 [(nanopb).max_count = 2];
 }
 
 message UdpPacket

@@ -1,10 +1,8 @@
 #include "pb.h"
 
-static bool write_callback(pb_ostream_t *stream,
-                           const uint8_t *buf,
-                           size_t count);
-
-static bool read_callback(pb_istream_t *stream, uint8_t *buf, size_t count);
+bool encode_unionmessage(pb_ostream_t *stream,
+                         const pb_msgdesc_t *messagetype,
+                         void *message);
 
 pb_ostream_t pb_ostream_from_socket(int fd);
 
