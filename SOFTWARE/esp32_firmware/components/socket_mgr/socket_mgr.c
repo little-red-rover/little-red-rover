@@ -83,10 +83,9 @@ static void socket_tx_task(void *arg)
                                   (struct sockaddr *)&dest_addr,
                                   sizeof(dest_addr));
 
-            // This fails frequently, I think the python agent node is too
-            // slow to empty network buffers
-            // if (sent !=
-            // stream.bytes_written) {
+            // This fails whenever a client isn't emptying the network buffer,
+            // commented out for now.
+            // if (sent != stream.bytes_written) {
             //     ESP_LOGE(TAG,
             //              "Failed to write full packet data. Wrote %ld, "
             //              "expected %zu.",

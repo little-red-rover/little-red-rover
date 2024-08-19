@@ -63,7 +63,7 @@
 static const char *TAG = "drive_base_driver";
 
 // PUBLISHERS
-#define PUBLISHER_LOOP_PERIOD_MS 100
+#define PUBLISHER_LOOP_PERIOD_MS 20
 
 // MOTORS
 motor_handle_t left_motor_handle;
@@ -98,8 +98,8 @@ void wheel_state_publish_timer_callback()
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    wheel_state_msg.joint_states.time.sec = ts.tv_sec;
-    wheel_state_msg.joint_states.time.nanosec = ts.tv_nsec;
+    wheel_state_msg.joint_states.time.sec = (int32_t)ts.tv_sec;
+    wheel_state_msg.joint_states.time.nanosec = (uint32_t)ts.tv_nsec;
 
     wheel_state_msg.joint_states.position[0] =
       left_motor_handle.encoder.position;

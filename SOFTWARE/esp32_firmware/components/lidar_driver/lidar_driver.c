@@ -37,7 +37,8 @@
 
 static const char *TAG = "lidar driver";
 
-#define POINT_PER_PACK 12
+#define POINT_PER_UART_PACKET 12
+#define POINT_PER_UDP_PACKET 120
 #define HEADER 0x54
 #define VERLEN 0x2C
 
@@ -55,7 +56,7 @@ typedef struct
     uint8_t ver_len;
     uint16_t speed;
     uint16_t start_angle;
-    LidarPoint points[POINT_PER_PACK];
+    LidarPoint points[POINT_PER_UART_PACKET];
     uint16_t end_angle;
     uint16_t timestamp;
     uint8_t crc8;
@@ -96,29 +97,36 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len)
     return crc;
 }
 
-void publish_scan(const LiDARFrame *scan)
+static size_t point_num = 0;
+
+void add_to_packet(const LiDARFrame *scan)
 {
-    scan_msg.laser.angle_min = deg_2_rad((float)(scan->start_angle) / 100.0);
     scan_msg.laser.angle_max = deg_2_rad((float)(scan->end_angle) / 100.0);
     if (scan_msg.laser.angle_max < scan_msg.laser.angle_min) {
         scan_msg.laser.angle_max = scan_msg.laser.angle_max + 2 * M_PI;
     }
+
+    for (uint16_t i = 0; i < POINT_PER_UART_PACKET; i++) {
+        scan_msg.laser.ranges[point_num] =
+          (float)(scan->points[i].distance) / 1000.0;
+        scan_msg.laser.intensities[point_num] =
+          (float)(scan->points[i].intensity);
+        point_num++;
+    }
+
     scan_msg.laser.angle_increment =
-      (scan_msg.laser.angle_max - scan_msg.laser.angle_min) /
-      (POINT_PER_PACK - 1);
+      (scan_msg.laser.angle_max - scan_msg.laser.angle_min) / (point_num - 1);
     scan_msg.laser.time_increment =
       scan_msg.laser.angle_increment / deg_2_rad((float)(scan->speed));
-
-    for (uint16_t i = 0; i < POINT_PER_PACK; i++) {
-        scan_msg.laser.ranges[i] = (float)(scan->points[i].distance) / 1000.0;
-        scan_msg.laser.intensities[i] = (float)(scan->points[i].intensity);
-    }
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     scan_msg.laser.time.sec = (int32_t)ts.tv_sec;
-    scan_msg.laser.time.nanosec = (int32_t)ts.tv_nsec;
+    scan_msg.laser.time.nanosec = (uint32_t)ts.tv_nsec;
+}
 
+void publish_packet()
+{
     if (tx_queue != NULL &&
         xQueueSend(tx_queue, (void *)&scan_msg, 10) != pdTRUE) {
         ESP_LOGE(TAG, "Failed to push scan onto queue");
@@ -173,7 +181,17 @@ static void lidar_driver_task(void *arg)
                      checksum,
                      scan_data.crc8);
         } else {
-            publish_scan(&scan_data);
+            if (point_num == 0) {
+                scan_msg.laser.angle_min =
+                  deg_2_rad((float)(scan_data.start_angle) / 100.0);
+            }
+
+            add_to_packet(&scan_data);
+
+            if (point_num > POINT_PER_UDP_PACKET - POINT_PER_UART_PACKET) {
+                point_num = 0;
+                publish_packet();
+            }
         }
     }
 
@@ -186,17 +204,17 @@ void lidar_driver_init()
     gpio_set_direction(LIDAR_PWM, GPIO_MODE_OUTPUT);
     gpio_set_level(LIDAR_PWM, 1);
 
-    // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg.has_laser = true;
     scan_msg.laser.has_time = true;
 
+    // Pulled this from a logic analyzer, can't find it in the documentation
     scan_msg.laser.scan_time = 0.001;
 
     scan_msg.laser.range_min = 0.1;
     scan_msg.laser.range_max = 8.0;
 
-    scan_msg.laser.ranges_count = POINT_PER_PACK;
-    scan_msg.laser.intensities_count = POINT_PER_PACK;
+    scan_msg.laser.ranges_count = POINT_PER_UDP_PACKET;
+    scan_msg.laser.intensities_count = POINT_PER_UDP_PACKET;
 
     xTaskCreatePinnedToCore(lidar_driver_task,
                             "lidar_driver_task",

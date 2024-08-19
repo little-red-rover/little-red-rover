@@ -12,7 +12,7 @@ PB_BIND(TimeStamp, TimeStamp, AUTO)
 PB_BIND(TwistCmd, TwistCmd, AUTO)
 
 
-PB_BIND(LaserScan, LaserScan, AUTO)
+PB_BIND(LaserScan, LaserScan, 2)
 
 
 PB_BIND(JointStates, JointStates, AUTO)

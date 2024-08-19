@@ -122,6 +122,7 @@ esp_err_t init_fs(void)
     }
     return ESP_OK;
 }
+
 /* The event group allows multiple bits for each event, but we only care about
  * two events:
  * - we are connected to the AP with an IP
@@ -381,14 +382,15 @@ void wifi_mgr_init()
     }
 
     // Load bearing delay
-    // This prevents the esp32s3 from boot looping (for some reason)
+    // This prevents the esp32s3 from boot looping (for some reason, I don't
+    // know why)
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
     ESP_LOGI(TAG, "Wifi started successfully");
     ip_napt_enable(esp_ip4addr_aton(DEFAULT_AP_IP), 1);
     ESP_LOGI(TAG, "ip_napt enabled");
 
-    // Setting up time sync
+    // Set up time sync
     esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
     esp_sntp_setservername(0, "pool.ntp.org");
     esp_sntp_init();

@@ -33,9 +33,9 @@ typedef struct _LaserScan {
     float range_min;
     float range_max;
     pb_size_t ranges_count;
-    float ranges[12];
+    float ranges[120];
     pb_size_t intensities_count;
-    float intensities[12];
+    float intensities[120];
 } LaserScan;
 
 typedef struct _JointStates {
@@ -68,12 +68,12 @@ extern "C" {
 /* Initializer values for message structs */
 #define TimeStamp_init_default                   {0, 0}
 #define TwistCmd_init_default                    {false, TimeStamp_init_default, 0, 0}
-#define LaserScan_init_default                   {false, TimeStamp_init_default, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define LaserScan_init_default                   {false, TimeStamp_init_default, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 #define JointStates_init_default                 {false, TimeStamp_init_default, 0, {"", ""}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_default                   {false, LaserScan_init_default, false, JointStates_init_default, false, TwistCmd_init_default}
 #define TimeStamp_init_zero                      {0, 0}
 #define TwistCmd_init_zero                       {false, TimeStamp_init_zero, 0, 0}
-#define LaserScan_init_zero                      {false, TimeStamp_init_zero, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define LaserScan_init_zero                      {false, TimeStamp_init_zero, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 #define JointStates_init_zero                    {false, TimeStamp_init_zero, 0, {"", ""}, 0, {0, 0}, 0, {0, 0}, 0, {0, 0}}
 #define UdpPacket_init_zero                      {false, LaserScan_init_zero, false, JointStates_init_zero, false, TwistCmd_init_zero}
 
@@ -167,11 +167,11 @@ extern const pb_msgdesc_t UdpPacket_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define JointStates_size                         107
-#define LaserScan_size                           174
+#define LaserScan_size                           1254
 #define MESSAGES_PB_H_MAX_SIZE                   UdpPacket_size
 #define TimeStamp_size                           17
 #define TwistCmd_size                            29
-#define UdpPacket_size                           317
+#define UdpPacket_size                           1397
 
 #ifdef __cplusplus
 } /* extern "C" */
