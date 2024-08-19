@@ -1,3 +1,4 @@
+from math import floor, pi
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -35,6 +36,15 @@ class HAL(Node):
         self.scan_publisher = self.create_publisher(
             LaserScan, "scan", qos_profile_sensor_data
         )
+        self.laser_msg = LaserScan()
+        self.laser_msg.header.frame_id = "lidar"
+        self.laser_msg.range_min = 0.1
+        self.laser_msg.range_max = 8.0
+        self.laser_msg.angle_min = 0.0
+        self.laser_msg.angle_max = 2.0 * pi
+        self.laser_msg.ranges.fromlist([0.0] * 720)
+        self.laser_msg.intensities.fromlist([0.0] * 720)
+        self.laser_msg.angle_increment = (2 * pi) / (len(self.laser_msg.ranges))
 
         threading.Thread(target=self.run_loop).start()
 
@@ -65,19 +75,28 @@ class HAL(Node):
         self.joint_state_publisher.publish(msg)
 
     def handle_laser_scan(self, packet: messages.LaserScan):
-        msg = LaserScan()
-        msg.header.stamp.sec = packet.time.sec
-        msg.header.stamp.nanosec = packet.time.nanosec
-        msg.header.frame_id = "lidar"
-        msg.angle_min = packet.angle_min
-        msg.angle_max = packet.angle_max
-        msg.range_min = packet.range_min
-        msg.range_max = packet.range_max
-        msg.time_increment = packet.time_increment
-        msg.angle_increment = packet.angle_increment
-        msg.ranges = packet.ranges
-        msg.intensities = packet.intensities
-        self.scan_publisher.publish(msg)
+        break_in_packet = False
+
+        for i in range(len(packet.ranges)):
+            angle = packet.angle_min + (packet.angle_max - packet.angle_min) * (
+                i / (len(packet.ranges) - 1)
+            )
+            index = int(((angle % (2.0 * pi)) / (2.0 * pi)) * 720.0)
+
+            if angle > pi * 2.0 and not break_in_packet:
+                self.laser_msg.time_increment = packet.time_increment
+                self.laser_msg.scan_time = packet.scan_time
+
+                break_in_packet = True
+                self.scan_publisher.publish(self.laser_msg)
+                self.laser_msg.ranges = [0.0] * 720
+                self.laser_msg.intensities = [0.0] * 720
+
+                self.laser_msg.header.stamp.sec = packet.time.sec
+                self.laser_msg.header.stamp.nanosec = packet.time.nanosec
+
+            self.laser_msg.ranges[index] = packet.ranges[i]
+            self.laser_msg.intensities[index] = packet.intensities[i]
 
     def cmd_vel_callback(self, msg: Twist):
         packet = messages.UdpPacket()

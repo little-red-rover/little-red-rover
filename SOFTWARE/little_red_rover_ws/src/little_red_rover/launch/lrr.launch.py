@@ -159,7 +159,7 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 [
                     get_package_share_directory("slam_toolbox"),
-                    "/launch/online_sync_launch.py",
+                    "/launch/online_async_launch.py",
                 ]
             ),
             launch_arguments={
@@ -168,7 +168,7 @@ def generate_launch_description():
                     [
                         get_package_share_directory("little_red_rover"),
                         "config",
-                        "slam_toolbox_sync.yaml",
+                        "slam_toolbox.yaml",
                     ]
                 ),
             }.items(),
