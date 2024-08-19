@@ -31,6 +31,7 @@ class HAL(Node):
         self.joint_state_publisher = self.create_publisher(
             JointState, "joint_states", qos_profile_sensor_data
         )
+
         self.scan_publisher = self.create_publisher(
             LaserScan, "scan", qos_profile_sensor_data
         )
@@ -41,31 +42,42 @@ class HAL(Node):
         while True:
             data = self.socket.recv(1500)
             packet = messages.UdpPacket()
-            packet.ParseFromString(data)
+            try:
+                packet.ParseFromString(data)
+            except Exception as e:
+                print(e)
+                continue
+
             if packet.HasField("laser"):
-                msg = LaserScan()
-                msg.header.stamp.sec = packet.laser.time.sec
-                msg.header.stamp.nanosec = packet.laser.time.nanosec
-                msg.header.frame_id = "lidar"
-                msg.angle_min = packet.laser.angle_min
-                msg.angle_max = packet.laser.angle_max
-                msg.range_min = packet.laser.range_min
-                msg.range_max = packet.laser.range_max
-                msg.time_increment = packet.laser.time_increment
-                msg.angle_increment = packet.laser.angle_increment
-                msg.ranges = packet.laser.ranges
-                msg.intensities = packet.laser.intensities
-                self.scan_publisher.publish(msg)
+                self.handle_laser_scan(packet.laser)
             elif packet.HasField("joint_states"):
-                msg = JointState()
-                msg.header.stamp.sec = packet.joint_states.time.sec
-                msg.header.stamp.nanosec = packet.joint_states.time.nanosec
-                msg.header.frame_id = "robot_body"
-                msg.name = packet.joint_states.name
-                msg.effort = packet.joint_states.effort
-                msg.position = packet.joint_states.position
-                msg.velocity = packet.joint_states.velocity
-                self.joint_state_publisher.publish(msg)
+                self.handle_joint_states(packet.joint_states)
+
+    def handle_joint_states(self, packet: messages.JointStates):
+        msg = JointState()
+        msg.header.stamp.sec = packet.time.sec
+        msg.header.stamp.nanosec = packet.time.nanosec
+        msg.header.frame_id = "robot_body"
+        msg.name = packet.name
+        msg.effort = packet.effort
+        msg.position = packet.position
+        msg.velocity = packet.velocity
+        self.joint_state_publisher.publish(msg)
+
+    def handle_laser_scan(self, packet: messages.LaserScan):
+        msg = LaserScan()
+        msg.header.stamp.sec = packet.time.sec
+        msg.header.stamp.nanosec = packet.time.nanosec
+        msg.header.frame_id = "lidar"
+        msg.angle_min = packet.angle_min
+        msg.angle_max = packet.angle_max
+        msg.range_min = packet.range_min
+        msg.range_max = packet.range_max
+        msg.time_increment = packet.time_increment
+        msg.angle_increment = packet.angle_increment
+        msg.ranges = packet.ranges
+        msg.intensities = packet.intensities
+        self.scan_publisher.publish(msg)
 
     def cmd_vel_callback(self, msg: Twist):
         packet = messages.UdpPacket()

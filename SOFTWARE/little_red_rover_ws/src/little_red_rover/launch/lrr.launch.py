@@ -94,9 +94,7 @@ def generate_launch_description():
                     "/launch/foxglove_bridge_launch.xml",
                 ]
             ),
-            launch_arguments={
-                "port": "8765",
-            }.items(),
+            launch_arguments={"port": "8765"}.items(),
         ),
         Node(
             package="robot_state_publisher",
@@ -117,7 +115,11 @@ def generate_launch_description():
             package="little_red_rover",
             executable="odometry_publisher",
             output="both",
-            parameters=[],
+            parameters=[
+                {
+                    "use_sim_time": run_sim,
+                }
+            ],
         ),
         Node(
             package="robot_localization",
@@ -139,4 +141,40 @@ def generate_launch_description():
         ),
     ]
 
-    return LaunchDescription(config + robot_launch + teleop + visualization + odometry)
+    # ros2 launch nav2_bringup navigation_launch.py use_sim_time:=True
+    # ros2 launch slam_toolbox online_async_launch.py
+    navigation = [
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         [
+        #             get_package_share_directory("nav2_bringup"),
+        #             "/launch/navigation_launch.py",
+        #         ]
+        #     ),
+        #     launch_arguments={
+        #         "use_sim_time": run_sim,
+        #     }.items(),
+        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    get_package_share_directory("slam_toolbox"),
+                    "/launch/online_sync_launch.py",
+                ]
+            ),
+            launch_arguments={
+                "use_sim_time": run_sim,
+                "slam_params_file": PathJoinSubstitution(
+                    [
+                        get_package_share_directory("little_red_rover"),
+                        "config",
+                        "slam_toolbox_sync.yaml",
+                    ]
+                ),
+            }.items(),
+        ),
+    ]
+
+    return LaunchDescription(
+        config + robot_launch + teleop + visualization + odometry + navigation
+    )

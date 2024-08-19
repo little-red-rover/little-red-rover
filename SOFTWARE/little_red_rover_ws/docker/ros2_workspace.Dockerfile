@@ -48,6 +48,7 @@ RUN echo "alias lrr_build='(cd /little_red_rover_ws && colcon build --symlink-in
 RUN echo "alias lrr_run='ros2 launch little_red_rover lrr.launch.py'" >> /root/.bashrc
 RUN echo "alias lrr_connect='. /tools/wifi_auth.bash'" >> /root/.bashrc
 
+RUN echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> /root/.bashrc
 RUN echo "export IDF_PATH=/tools/idf" >> /root/.bashrc
 
 RUN echo "source /ros2_setup.bash" >> /root/.bashrc
