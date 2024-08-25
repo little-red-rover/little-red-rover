@@ -7,12 +7,12 @@ slam_toolbox:
     ceres_preconditioner: SCHUR_JACOBI
     ceres_trust_strategy: LEVENBERG_MARQUARDT
     ceres_dogleg_type: TRADITIONAL_DOGLEG
-    ceres_loss_function: None
+    ceres_loss_function: HuberLoss
 
     # ROS Parameters
     odom_frame: odom
     map_frame: map
-    base_frame: base_link
+    base_frame: base_footprint
     scan_topic: /scan
     use_map_saver: true
     mode: mapping #localization
@@ -43,7 +43,7 @@ slam_toolbox:
     minimum_travel_distance: 0.05
     minimum_travel_heading: 0.05
     scan_buffer_size: 20
-    scan_buffer_maximum_scan_distance: 10.0
+    scan_buffer_maximum_scan_distance: 8.0
     link_match_minimum_response_fine: 0.1  
     link_scan_maximum_distance: 1.5
     loop_search_maximum_distance: 3.0

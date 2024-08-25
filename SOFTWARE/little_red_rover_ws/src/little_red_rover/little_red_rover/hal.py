@@ -1,4 +1,4 @@
-from math import floor, pi
+from math import floor, inf, pi
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -65,9 +65,8 @@ class HAL(Node):
 
     def handle_joint_states(self, packet: messages.JointStates):
         msg = JointState()
-        msg.header.stamp.sec = packet.time.sec
-        msg.header.stamp.nanosec = packet.time.nanosec
         msg.header.frame_id = "robot_body"
+        msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = packet.name
         msg.effort = packet.effort
         msg.position = packet.position
@@ -92,11 +91,19 @@ class HAL(Node):
                 self.laser_msg.ranges = [0.0] * 720
                 self.laser_msg.intensities = [0.0] * 720
 
-                self.laser_msg.header.stamp.sec = packet.time.sec
-                self.laser_msg.header.stamp.nanosec = packet.time.nanosec
+                self.laser_msg.header.stamp = self.get_clock().now().to_msg()
 
             self.laser_msg.ranges[index] = packet.ranges[i]
             self.laser_msg.intensities[index] = packet.intensities[i]
+
+            if (
+                self.laser_msg.ranges[index] > 8.0
+                or self.laser_msg.ranges[index] < 0.1
+                or self.laser_msg.intensities[index] == 0
+            ):
+                self.laser_msg.ranges[index] = inf
+                self.laser_msg.intensities[index] = 0
+                pass
 
     def cmd_vel_callback(self, msg: Twist):
         packet = messages.UdpPacket()

@@ -35,15 +35,30 @@
 // Anything above audible is fine
 #define PWM_FREQ_HZ 25000
 
+// Max change to motor power per pid cycle
+// Reduces current surges
+#define MAX_JERK 0.1
+
 // Minimum % duty that must be applied to affect any motion
 // Inputs below this level are ignored
 #define HYSTERESIS 0.25
 
 #define PID_LOOP_PERIOD_MS 10.0
 
-#define PULSES_PER_ROTATION 590.0
+#define PULSES_PER_ROTATION 2340.0
 #define PULSES_TO_RAD(pulses)                                                  \
     (((float)pulses / PULSES_PER_ROTATION) * (2 * M_PI))
+
+double clamp(float d, float min, float max)
+{
+    const float t = d < min ? min : d;
+    return t > max ? max : t;
+}
+
+double mod(double a, double b)
+{
+    return a - ((int)(a / b)) * b;
+}
 
 void set_motor_enabled(motor_handle_t *motor, bool enable)
 {
@@ -58,6 +73,7 @@ void set_motor_enabled(motor_handle_t *motor, bool enable)
 
 static void set_motor_power(motor_handle_t *motor, float power)
 {
+    power = clamp(power, -1.0, 1.0);
     if (power > HYSTERESIS) {
         ledc_set_duty(LEDC_LOW_SPEED_MODE,
                       motor->chan_b,
@@ -98,17 +114,6 @@ void configure_pwm(ledc_channel_t channel, int gpio)
     ESP_ERROR_CHECK(ledc_channel_config(&pwm_channel));
 }
 
-double clamp(float d, float min, float max)
-{
-    const float t = d < min ? min : d;
-    return t > max ? max : t;
-}
-
-double mod(double a, double b)
-{
-    return a - ((int)(a / b)) * b;
-}
-
 void pid_callback(void *arg)
 {
     motor_handle_t *motor = (motor_handle_t *)arg;
@@ -124,7 +129,9 @@ void pid_callback(void *arg)
     ESP_ERROR_CHECK(
       pid_compute(motor->pid_controller, error, &motor->cmd_effort));
 
-    motor->applied_effort = motor->cmd_effort;
+    motor->applied_effort = clamp(motor->cmd_effort,
+                                  motor->applied_effort - MAX_JERK,
+                                  motor->applied_effort + MAX_JERK);
 
     set_motor_power(motor, motor->applied_effort);
 
