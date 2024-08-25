@@ -17,6 +17,8 @@
 #include "messages.pb.h"
 #include "socket_mgr.h"
 
+#include "status_led_driver.h"
+
 #define DRIVE_BASE_TASK_SIZE (4096)
 
 // PIN DEFINITIONS

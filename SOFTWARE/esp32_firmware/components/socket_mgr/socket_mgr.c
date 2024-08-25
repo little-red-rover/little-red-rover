@@ -17,6 +17,7 @@
 #include "pb_encode.h"
 #include "pb_utils.h"
 #include "portmacro.h"
+#include "status_led_driver.h"
 
 #define SOCKET_TX_TASK_STACK_SIZE 4096
 #define SOCKET_RX_TASK_STACK_SIZE 4096
@@ -142,6 +143,7 @@ void register_callback(void (*callback)(void *), eRxMsgTypes type)
 
 void socket_mgr_init()
 {
+    set_status(eAgentDisconnected);
     while (get_agent_ip() != ESP_OK) {
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
@@ -164,8 +166,10 @@ void socket_mgr_init()
     int err = bind(socket_id, (struct sockaddr *)&src_addr, sizeof(src_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+    } else {
+        set_status(eAgentConnected);
+        ESP_LOGI(TAG, "Socket bound, port %d", PORT);
     }
-    ESP_LOGI(TAG, "Socket bound, port %d", PORT);
 
     ESP_LOGI(TAG, "Socket created, communicating with %s:%d", AGENT_IP, PORT);
 

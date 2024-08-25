@@ -29,6 +29,8 @@
 
 #include "wifi_mgr.h"
 
+#include "status_led_driver.h"
+
 #define REPROVISION_PIN 11
 
 #define WIFI_CONNECTION_TIMEOUT_MS 10000
@@ -286,6 +288,8 @@ static esp_err_t start_webserver()
 
 void wifi_mgr_init()
 {
+    set_status(eWifiDisconnected);
+
     /* NVS INIT */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
@@ -365,6 +369,7 @@ void wifi_mgr_init()
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
     if (!provisioned) {
+        set_status(eWifiProvisioning);
         ESP_ERROR_CHECK(esp_event_handler_register(
           IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
@@ -404,6 +409,7 @@ void wifi_mgr_init()
       s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, timeout);
 
     if (wifi_ret & WIFI_CONNECTED_BIT) {
+        set_status(eWifiConnected);
         ESP_LOGI(TAG, "Device is provisioned and connected.");
     } else {
         // Error handling is for chumps

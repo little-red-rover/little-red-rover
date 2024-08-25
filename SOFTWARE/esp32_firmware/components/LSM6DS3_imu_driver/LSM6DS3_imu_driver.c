@@ -12,6 +12,8 @@
 
 #include "driver/i2c_master.h"
 
+#include "status_led_driver.h"
+
 #define IMU_TASK_STACK_SIZE (2048)
 
 #define SCL_PIN 1
@@ -84,6 +86,10 @@ void LSM6DS3_imu_driver_init()
     // uint8_t read;
     // i2c_master_transmit_receive(
     //   imu_i2c_handle, &DEV_READ_ADDR, 1, &read, 1, -1);
+
+    if (readRegister(LSM6DS3_WHO_AM_I_REG) != 105) {
+        set_status(eImuInitFailed);
+    }
 
     ESP_LOGI(TAG, "IMU WHO_AM_I: %d", (int)readRegister(LSM6DS3_WHO_AM_I_REG));
 

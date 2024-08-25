@@ -11,4 +11,4 @@ endif()
 
 idf_component_register(SRCS  "socket_mgr.c" "pb_utils.c" "${pb_csrcs}"
                        INCLUDE_DIRS include .
-                       REQUIRES nvs_flash nanopb)
+                       REQUIRES nvs_flash nanopb status_led_driver)

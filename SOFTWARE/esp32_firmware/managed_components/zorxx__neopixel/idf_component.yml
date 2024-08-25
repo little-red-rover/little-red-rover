@@ -1,0 +1,12 @@
+description: High-performance Neopixel driver
+license: MIT
+repository: https://github.com/zorxx/neopixel.git
+tags:
+- neopixel
+- led
+- ws2812b
+- ws2812
+- i2s
+- dma
+url: https://github.com/zorxx/neopixel
+version: 1.0.9
